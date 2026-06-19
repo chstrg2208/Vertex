@@ -101,7 +101,7 @@ export default function MainDashboard({
           
           {/* Logo */}
           <div className="logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => setActivePublicTab('overview')}>
-            <img src="/logo.png" alt="Vertex Logo" style={{ height: '28px', width: 'auto', display: 'block' }} />
+            <img src="/logo.png?v=2" alt="Vertex Logo" style={{ height: '38px', width: 'auto', display: 'block' }} />
           </div>
 
           {/* Navigation Links */}
@@ -296,7 +296,7 @@ export default function MainDashboard({
             {/* Branding Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <img src="/logo.png" alt="Vertex Logo" style={{ height: '24px', width: 'auto', display: 'block' }} />
+                <img src="/logo.png?v=2" alt="Vertex Logo" style={{ height: '32px', width: 'auto', display: 'block' }} />
               </div>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, maxWidth: '240px' }}>
                 {t.footerSlogan}
