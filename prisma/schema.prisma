@@ -1,0 +1,73 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Job {
+  id           Int           @id @default(autoincrement())
+  title        String
+  company      String
+  location     String
+  salary       String
+  tags         String[]
+  description  String
+  createdAt    DateTime      @default(now())
+  applications Application[]
+}
+
+model Candidate {
+  id           Int           @id @default(autoincrement())
+  name         String
+  title        String
+  email        String
+  phone        String
+  location     String
+  summary      String
+  skills       String[]
+  experience   Json          // Array of { company, role, duration, description }
+  education    Json          // Array of { school, degree, duration }
+  applications Application[]
+}
+
+model Application {
+  id           Int      @id @default(autoincrement())
+  jobId        Int
+  candidateId  Int
+  status       String   // "APPLIED", "SCREENING", "INTERVIEW", "OFFERED", "HIRED", "REJECTED"
+  createdAt    DateTime @default(now())
+  
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  authorName  String
+  authorRole  String    // "recruiter", "candidate"
+  content     String
+  likesCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  comments    Comment[]
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  postId      Int
+  authorName  String
+  content     String
+  createdAt   DateTime @default(now())
+  
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  sender    String   // "recruiter", "candidate"
+  recipient String   // "recruiter", "candidate"
+  message   String
+  createdAt DateTime @default(now())
+}
