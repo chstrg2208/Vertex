@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Briefcase } from 'lucide-react';
 
 interface HeroSectionProps {
   theme: 'light' | 'dark';
@@ -29,12 +30,12 @@ export default function HeroSection({ theme, tag, title, description, actions }:
   }, []);
 
   return (
-    <section className="overview-hero" style={{ 
-      position: 'relative', 
-      minHeight: '660px', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
+    <section className="overview-hero" style={{
+      position: 'relative',
+      minHeight: '660px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       padding: '120px 0 100px 0',
       overflow: 'hidden',
       background: 'var(--background)'
@@ -49,10 +50,10 @@ export default function HeroSection({ theme, tag, title, description, actions }:
         zIndex: 1
       }}>
         {heroImages.map((imgSrc, index) => (
-          <img 
+          <img
             key={index}
-            src={imgSrc} 
-            alt={`Workstation Slide ${index + 1}`} 
+            src={imgSrc}
+            alt={`Workstation Slide ${index + 1}`}
             style={{
               position: 'absolute',
               top: 0,
@@ -60,9 +61,10 @@ export default function HeroSection({ theme, tag, title, description, actions }:
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              opacity: currentImageIndex === index ? 0.7 : 0,
-              transition: 'opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
-              zIndex: currentImageIndex === index ? 2 : 1
+              opacity: currentImageIndex === index ? 0.65 : 0,
+              transition: 'opacity 2.5s ease-in-out',
+              zIndex: currentImageIndex === index ? 2 : 1,
+              willChange: 'opacity'
             }}
           />
         ))}
@@ -73,7 +75,7 @@ export default function HeroSection({ theme, tag, title, description, actions }:
           left: 0,
           right: 0,
           bottom: 0,
-          background: theme === 'dark' 
+          background: theme === 'dark'
             ? 'linear-gradient(180deg, rgba(8, 12, 20, 0.5) 0%, rgba(8, 12, 20, 0.95) 100%)'
             : 'linear-gradient(180deg, rgba(245, 247, 250, 0.4) 0%, rgba(245, 247, 250, 0.95) 100%)',
           zIndex: 3,
@@ -97,25 +99,41 @@ export default function HeroSection({ theme, tag, title, description, actions }:
           boxShadow: theme === 'dark' ? '0 20px 40px rgba(0, 0, 0, 0.4)' : '0 20px 40px rgba(0, 0, 0, 0.06)',
           transition: 'all 0.3s ease'
         }}>
-          {tag && (
-            <span className="hero-tag-pill">
-              {tag}
-            </span>
-          )}
-          <h1 className="hero-title" style={{ 
-            fontSize: '48px', 
-            lineHeight: '1.2', 
+          {tag && (() => {
+            const match = tag.match(/^([^\w\s\d]+)\s*(.*)$/);
+            if (match) {
+              const [, symbol, text] = match;
+              return (
+                <span className="hero-tag-pill">
+                  {symbol === '💼' || symbol === '💥' ? (
+                    <Briefcase size={12} className="hero-tag-symbol" style={{ strokeWidth: 2.5 }} />
+                  ) : (
+                    <span className="hero-tag-symbol">{symbol}</span>
+                  )}
+                  <span>{text}</span>
+                </span>
+              );
+            }
+            return (
+              <span className="hero-tag-pill">
+                {tag}
+              </span>
+            );
+          })()}
+          <h1 className="hero-title" style={{
+            fontSize: '48px',
+            lineHeight: '1.2',
             margin: '0 auto',
             color: theme === 'dark' ? '#ffffff' : '#0f172a',
             textAlign: 'center'
           }}>
             {title}
           </h1>
-          <p className="hero-description" style={{ 
-            fontSize: '16px', 
-            color: theme === 'dark' ? '#cbd5e1' : '#475569', 
-            lineHeight: '1.6', 
-            maxWidth: '640px', 
+          <p className="hero-description" style={{
+            fontSize: '16px',
+            color: theme === 'dark' ? '#cbd5e1' : '#475569',
+            lineHeight: '1.6',
+            maxWidth: '640px',
             margin: '0 auto',
             textAlign: 'center'
           }}>
