@@ -323,3 +323,156 @@ export async function createCandidate(data: {
   }
 }
 
+export async function updateCandidateTAInfo(data: {
+  id: number;
+  status: string;
+  rating: number;
+  internalNotes: string;
+  englishLevel: string;
+  salaryExpectation: string;
+}) {
+  try {
+    const candidate = await prisma.candidate.update({
+      where: { id: data.id },
+      data: {
+        status: data.status,
+        rating: data.rating,
+        internalNotes: data.internalNotes,
+        englishLevel: data.englishLevel,
+        salaryExpectation: data.salaryExpectation,
+      },
+    });
+    revalidatePath('/');
+    return { success: true, candidate };
+  } catch (error) {
+    console.error('Failed to update candidate TA info:', error);
+    return { success: false, error: 'Không thể cập nhật đánh giá nhân sự' };
+  }
+}
+
+export async function getPartners() {
+  try {
+    return await prisma.partner.findMany({
+      orderBy: { code: 'asc' },
+    });
+  } catch (error) {
+    console.error('Failed to get partners:', error);
+    return [];
+  }
+}
+
+export async function createPartner(data: {
+  code: string;
+  name: string;
+  type: string;
+  taxCode: string;
+  repName: string;
+  devsCount: number;
+}) {
+  try {
+    const partner = await prisma.partner.create({
+      data: {
+        code: data.code,
+        name: data.name,
+        type: data.type,
+        taxCode: data.taxCode,
+        repName: data.repName,
+        devsCount: data.devsCount,
+      },
+    });
+    revalidatePath('/');
+    return { success: true, partner };
+  } catch (error) {
+    console.error('Failed to create partner:', error);
+    return { success: false, error: 'Không thể tạo đối tác mới' };
+  }
+}
+
+export async function updateApplicationBilling(data: {
+  id: number;
+  billingRate: number;
+  developerSalary: number;
+}) {
+  try {
+    const application = await prisma.application.update({
+      where: { id: data.id },
+      data: {
+        billingRate: data.billingRate,
+        developerSalary: data.developerSalary,
+      },
+    });
+    revalidatePath('/');
+    return { success: true, application };
+  } catch (error) {
+    console.error('Failed to update application billing:', error);
+    return { success: false, error: 'Không thể cập nhật biểu phí hợp đồng' };
+  }
+}
+
+// --- ACCOUNT ACTIONS ---
+
+export async function getAccounts() {
+  try {
+    return await prisma.account.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (error) {
+    console.error('Failed to get accounts:', error);
+    return [];
+  }
+}
+
+export async function createAccount(data: {
+  email: string;
+  password: string;
+  name: string;
+  role: string;
+}) {
+  try {
+    // Check if email exists
+    const existing = await prisma.account.findUnique({
+      where: { email: data.email },
+    });
+    if (existing) {
+      return { success: false, error: 'Email đã tồn tại trên hệ thống!' };
+    }
+
+    const account = await prisma.account.create({
+      data: {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        role: data.role,
+      },
+    });
+    revalidatePath('/');
+    return { success: true, account };
+  } catch (error) {
+    console.error('Failed to create account:', error);
+    return { success: false, error: 'Không thể tạo tài khoản mới' };
+  }
+}
+
+export async function authenticateAccount(email: string, password: string) {
+  try {
+    const account = await prisma.account.findUnique({
+      where: { email },
+    });
+    if (!account || account.password !== password) {
+      return { success: false, error: 'Email hoặc mật khẩu không chính xác!' };
+    }
+    return {
+      success: true,
+      user: {
+        name: account.name,
+        role: account.role,
+      },
+    };
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return { success: false, error: 'Lỗi hệ thống trong quá trình đăng nhập' };
+  }
+}
+
+
+

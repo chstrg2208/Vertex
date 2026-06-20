@@ -10,6 +10,8 @@ async function main() {
   await prisma.job.deleteMany({});
   await prisma.candidate.deleteMany({});
   await prisma.chatMessage.deleteMany({});
+  await prisma.partner.deleteMany({});
+  await prisma.account.deleteMany({});
 
   console.log('Seeding IT Talents (Developers)...');
   const dev1 = await prisma.candidate.create({
@@ -21,6 +23,11 @@ async function main() {
       location: 'Hà Nội',
       summary: 'Kỹ sư Backend với 6 năm kinh nghiệm lập trình Java, thiết kế hệ thống microservices chịu tải cao, thành thạo Spring Boot, Hibernate, Kafka và Redis.',
       skills: ['Java', 'Spring Boot', 'Microservices', 'PostgreSQL', 'Kafka', 'Redis', 'Docker'],
+      status: 'PLACED',
+      rating: 4.8,
+      internalNotes: 'Chuyên môn Java cực tốt, giao tiếp lưu loát, đã phỏng vấn vòng 2 và đạt điểm cao.',
+      englishLevel: 'IELTS 6.5',
+      salaryExpectation: '40,000,000 VND / tháng',
       experience: [
         {
           company: 'VNG Corporation',
@@ -54,6 +61,11 @@ async function main() {
       location: 'TP. Hồ Chí Minh',
       summary: 'Lập trình viên Frontend đam mê tạo dựng trải nghiệm người dùng mượt mà, tối ưu hóa SEO và hiệu năng web ứng dụng React/Next.js sử dụng CSS linh hoạt và glassmorphism.',
       skills: ['React', 'Next.js', 'TypeScript', 'CSS/SCSS', 'Webpack', 'Tailwind', 'RESTful API'],
+      status: 'AVAILABLE',
+      rating: 4.9,
+      internalNotes: 'Ứng viên xuất sắc về React/NextJS. Khả năng thiết kế UX rất tinh tế. Tiếng Anh tốt.',
+      englishLevel: 'TOEIC 850',
+      salaryExpectation: '35,000,000 VND / tháng',
       experience: [
         {
           company: 'FPT Software (Đối tác)',
@@ -87,6 +99,11 @@ async function main() {
       location: 'Đà Nẵng (Remote)',
       summary: 'Lập trình viên di động đa nền tảng Flutter với 3 năm kinh nghiệm, xây dựng ứng dụng trung thực cao, tích hợp bản đồ, cổng thanh toán và camera SDK.',
       skills: ['Flutter', 'Dart', 'Android/Kotlin', 'iOS/Swift', 'RESTful API', 'Firebase', 'State Management (Bloc)'],
+      status: 'AVAILABLE',
+      rating: 4.2,
+      internalNotes: 'Kỹ năng Flutter tốt, đã làm nhiều dự án outsource. Phản xạ nhanh.',
+      englishLevel: 'Intermediate',
+      salaryExpectation: '28,000,000 VND / tháng',
       experience: [
         {
           company: 'Freelancer chuyên nghiệp',
@@ -120,6 +137,11 @@ async function main() {
       location: 'Hà Nội',
       summary: 'Chuyên gia DevOps có chuyên môn sâu về hạ tầng đám mây AWS, tự động hóa CI/CD, Containerization bằng Docker/Kubernetes và giám sát log tập trung.',
       skills: ['DevOps', 'AWS', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD (Jenkins/GitLab)', 'Linux'],
+      status: 'AVAILABLE',
+      rating: 4.7,
+      internalNotes: 'Kiến thức AWS sâu rộng, chứng chỉ AWS DevOps Engineer Professional. Kinh nghiệm setup CI/CD tốt.',
+      englishLevel: 'Professional',
+      salaryExpectation: '48,000,000 VND / tháng',
       experience: [
         {
           company: 'ScaleEdge (Trực tiếp)',
@@ -184,6 +206,8 @@ async function main() {
       jobId: request1.id,
       candidateId: dev1.id,
       status: 'HIRED', // Đã duyệt dự án
+      billingRate: 55000000.0,
+      developerSalary: 40000000.0,
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
     }
   });
@@ -193,6 +217,8 @@ async function main() {
       jobId: request2.id,
       candidateId: dev2.id,
       status: 'SCREENING', // Đang thẩm định hồ sơ
+      billingRate: 45000000.0,
+      developerSalary: 32000000.0,
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     }
   });
@@ -202,7 +228,54 @@ async function main() {
       jobId: request3.id,
       candidateId: dev4.id,
       status: 'INTERVIEW', // Đang lên lịch phỏng vấn với ngân hàng
+      billingRate: 60000000.0,
+      developerSalary: 48000000.0,
       createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    }
+  });
+
+  console.log('Seeding Supply Partners...');
+  await prisma.partner.create({
+    data: {
+      code: 'PT-01',
+      name: 'FPT Software',
+      taxCode: '0101248130',
+      repName: 'Nguyễn Lâm Phương',
+      type: 'COMPANY',
+      devsCount: 12
+    }
+  });
+
+  await prisma.partner.create({
+    data: {
+      code: 'PT-02',
+      name: 'Rikkeisoft Joint Stock Company',
+      taxCode: '0105898860',
+      repName: 'Phan Thế Dũng',
+      type: 'COMPANY',
+      devsCount: 8
+    }
+  });
+
+  await prisma.partner.create({
+    data: {
+      code: 'PT-03',
+      name: 'CMC Global',
+      taxCode: '0107849122',
+      repName: 'Nguyễn Trung Chính',
+      type: 'COMPANY',
+      devsCount: 5
+    }
+  });
+
+  await prisma.partner.create({
+    data: {
+      code: 'PT-04',
+      name: 'Nguyễn Hoàng Long',
+      taxCode: '8092837233',
+      repName: 'Nguyễn Hoàng Long',
+      type: 'FREELANCER',
+      devsCount: 1
     }
   });
 
@@ -238,6 +311,34 @@ async function main() {
       sender: 'candidate',
       recipient: 'recruiter',
       message: 'Dạ em cảm ơn anh/chị. Em đã nhận được thông báo và sẽ chuẩn bị đầy đủ hồ sơ giấy tờ ạ.'
+    }
+  });
+
+  console.log('Seeding Default Accounts...');
+  await prisma.account.create({
+    data: {
+      email: 'admin@vertex.vn',
+      password: 'password',
+      name: 'Admin Vertex',
+      role: 'admin'
+    }
+  });
+
+  await prisma.account.create({
+    data: {
+      email: 'ta@vertex.vn',
+      password: 'password',
+      name: 'Hương (TA Staff)',
+      role: 'ta'
+    }
+  });
+
+  await prisma.account.create({
+    data: {
+      email: 'ba@vertex.vn',
+      password: 'password',
+      name: 'Dũng (BA Manager)',
+      role: 'ba'
     }
   });
 

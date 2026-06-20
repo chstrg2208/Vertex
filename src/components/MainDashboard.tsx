@@ -17,6 +17,8 @@ interface MainDashboardProps {
   initialApplications: any[];
   initialPosts: any[];
   initialMessages: any[];
+  initialPartners: any[];
+  initialAccounts: any[];
 }
 
 export default function MainDashboard({
@@ -26,10 +28,12 @@ export default function MainDashboard({
   initialApplications,
   initialPosts,
   initialMessages,
+  initialPartners,
+  initialAccounts,
 }: MainDashboardProps) {
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState<{ name: string; role: 'ta' | 'ba' } | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<{ name: string; role: 'ta' | 'ba' | 'admin' } | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Tab navigation state
@@ -66,7 +70,7 @@ export default function MainDashboard({
     localStorage.setItem('locale', nextLocale);
   };
 
-  const handleLoginSuccess = (userName: string, role: 'ta' | 'ba') => {
+  const handleLoginSuccess = (userName: string, role: 'ta' | 'ba' | 'admin') => {
     setIsLoggedIn(true);
     setLoggedInUser({ name: userName, role });
   };
@@ -110,7 +114,7 @@ export default function MainDashboard({
               /* Recruiter Portal Nav Header label */
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="badge" style={{ backgroundColor: 'var(--secondary-light)', color: 'var(--secondary)', fontWeight: 700 }}>
-                  {loggedInUser.role === 'ta' ? t.roleTA : t.roleBA}
+                  {loggedInUser.role === 'ta' ? t.roleTA : loggedInUser.role === 'ba' ? t.roleBA : (locale === 'vi' ? 'Admin Quản trị' : 'Admin Manager')}
                 </span>
               </div>
             ) : (
@@ -243,6 +247,8 @@ export default function MainDashboard({
             jobs={initialJobs}
             applications={initialApplications}
             messages={initialMessages}
+            partners={initialPartners}
+            accounts={initialAccounts}
             currentUser={{ name: loggedInUser.name, role: loggedInUser.role }}
             onOpenChat={handleOpenChatFromATS}
             activeChatContactName={activeChatContactName}

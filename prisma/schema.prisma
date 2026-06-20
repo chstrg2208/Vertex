@@ -28,20 +28,27 @@ model Candidate {
   location     String
   summary      String
   skills       String[]
-  experience   Json          // Array of { company, role, duration, description }
-  education    Json          // Array of { school, degree, duration }
-  applications Application[]
+  status            String        @default("AVAILABLE") // "AVAILABLE", "VETTING", "PLACED", "ON_LEAVE"
+  rating            Float         @default(5.0)
+  internalNotes     String        @default("")
+  englishLevel      String        @default("Intermediate")
+  salaryExpectation String        @default("Negotiable")
+  experience        Json          // Array of { company, role, duration, description }
+  education         Json          // Array of { school, degree, duration }
+  applications      Application[]
 }
 
 model Application {
-  id           Int      @id @default(autoincrement())
-  jobId        Int
-  candidateId  Int
-  status       String   // "APPLIED", "SCREENING", "INTERVIEW", "OFFERED", "HIRED", "REJECTED"
-  createdAt    DateTime @default(now())
+  id              Int       @id @default(autoincrement())
+  jobId           Int
+  candidateId     Int
+  status          String    // "APPLIED", "SCREENING", "INTERVIEW", "OFFERED", "HIRED", "REJECTED"
+  billingRate     Float     @default(45000000.0)
+  developerSalary Float     @default(35000000.0)
+  createdAt       DateTime  @default(now())
   
-  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 }
 
 model Post {
@@ -69,5 +76,25 @@ model ChatMessage {
   sender    String   // "recruiter", "candidate"
   recipient String   // "recruiter", "candidate"
   message   String
+  createdAt DateTime @default(now())
+}
+
+model Partner {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  type      String   // "COMPANY", "FREELANCER"
+  taxCode   String
+  repName   String
+  devsCount Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   // "ta", "ba", "admin"
   createdAt DateTime @default(now())
 }

@@ -1,17 +1,19 @@
-import { getJobs, getCandidates, getCandidateProfile, getApplications, getPosts, getChatMessages } from './actions';
+import { getJobs, getCandidates, getCandidateProfile, getApplications, getPosts, getChatMessages, getPartners, getAccounts } from './actions';
 import MainDashboard from '@/components/MainDashboard';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   // Fetch initial data in parallel from PostgreSQL
-  const [jobs, candidates, profile, applications, posts, messages] = await Promise.all([
+  const [jobs, candidates, profile, applications, posts, messages, partners, accounts] = await Promise.all([
     getJobs(),
     getCandidates(),
     getCandidateProfile(),
     getApplications(),
     getPosts(),
     getChatMessages(),
+    getPartners(),
+    getAccounts(),
   ]);
 
   return (
@@ -22,6 +24,8 @@ export default async function Home() {
       initialApplications={applications}
       initialPosts={posts}
       initialMessages={messages}
+      initialPartners={partners}
+      initialAccounts={accounts}
     />
   );
 }
