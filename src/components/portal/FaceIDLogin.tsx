@@ -73,6 +73,14 @@ export default function FaceIDLogin({ isOpen, onClose, onLoginSuccess, locale }:
 
         {/* Left Side: Branding & Visual Showcase (60% Width, hidden on mobile) */}
         <div className="login-visual-showcase">
+          <video
+            src="/loginVideo1.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="login-video"
+          />
           <div className="visual-nodes-container">
             <div className="glowing-orb orb-1"></div>
             <div className="glowing-orb orb-2"></div>
@@ -372,6 +380,17 @@ export default function FaceIDLogin({ isOpen, onClose, onLoginSuccess, locale }:
             opacity: 1;
             transform: translateY(0);
           }
+        }
+
+        .login-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          z-index: 0;
+          opacity: 0.5;
+          pointer-events: none;
         }
 
         /* Floating particles visual container on the left */
