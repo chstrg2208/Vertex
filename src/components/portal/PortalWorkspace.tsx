@@ -5,6 +5,7 @@ import { UserCheck, Users, Briefcase, Layers, Plus, Search, FileText, ChevronRig
 import { createCandidate, createJob, updateApplicationStatus, updateCandidateTAInfo, applyToJob, createPartner, updateApplicationBilling, createAccount } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import ChatTab from '../ChatTab';
+import BAPortalWorkspace from './BAPortalWorkspace';
 
 interface Candidate {
   id: number;
@@ -648,6 +649,10 @@ export default function PortalWorkspace({
       alert(result.error || 'Failed to create account');
     }
   };
+
+  if (currentUser.role === 'ba') {
+    return <BAPortalWorkspace locale={locale} currentUser={currentUser} />;
+  }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: 'calc(100vh - 180px)', gap: '24px' }}>
