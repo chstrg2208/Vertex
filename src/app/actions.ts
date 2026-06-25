@@ -177,6 +177,7 @@ function initializeFallbackStore() {
       salary: '35,000,000 - 45,000,000 VND / tháng',
       tags: ['Java', 'Spring Boot', 'Microservices'],
       description: 'Cần cung cấp khẩn cấp 3 nhân sự Java Senior phát triển dự án nâng cấp lõi hệ thống VinID. Thời gian dự kiến: 6 tháng làm việc trực tiếp tại văn phòng. Yêu cầu pass vòng phỏng vấn kỹ thuật của ScaleEdge.',
+      status: 'Active',
       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
     },
     {
@@ -187,6 +188,7 @@ function initializeFallbackStore() {
       salary: '25,000,000 - 32,000,000 VND / tháng',
       tags: ['React', 'Next.js', 'CSS/SCSS'],
       description: 'Dự án chuyển đổi số cổng thông tin nội bộ Viettel. Cần 2 Dev React cứng cáp về giao diện glassmorphic và chuyển động mượt mà. Thời gian dự án: 4 tháng.',
+      status: 'Active',
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
     },
     {
@@ -197,6 +199,7 @@ function initializeFallbackStore() {
       salary: '40,000,000 - 55,000,000 VND / tháng',
       tags: ['DevOps', 'AWS', 'Kubernetes'],
       description: 'Thiết kế hạ tầng bảo mật cấp cao trên AWS Cloud phục vụ ngân hàng số. Cần nhân sự DevOps tối thiểu 4 năm kinh nghiệm thực tế, sẵn sàng bắt đầu ngay.',
+      status: 'Active',
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     }
   ];
@@ -383,6 +386,7 @@ export async function createJob(data: {
         salary: data.salary,
         tags: data.tags,
         description: data.description,
+        status: 'Pending',
       },
     });
     revalidatePath('/');
@@ -393,11 +397,33 @@ export async function createJob(data: {
     const newJob = {
       id: fallbackStore.jobs.length + 1,
       ...data,
+      status: 'Pending',
       createdAt: new Date()
     };
     fallbackStore.jobs.push(newJob);
     revalidatePath('/');
     return { success: true, job: newJob };
+  }
+}
+
+export async function updateJobStatus(id: number, status: string): Promise<{ success: boolean; job?: any; error?: string }> {
+  try {
+    const job = await prisma.job.update({
+      where: { id },
+      data: { status },
+    });
+    revalidatePath('/');
+    return { success: true, job };
+  } catch (error) {
+    console.warn('Prisma updateJobStatus failed, falling back to mock store:', error);
+    initializeFallbackStore();
+    const index = fallbackStore.jobs.findIndex(j => j.id === id);
+    if (index !== -1) {
+      fallbackStore.jobs[index].status = status;
+      revalidatePath('/');
+      return { success: true, job: fallbackStore.jobs[index] };
+    }
+    return { success: false, error: 'Không thể cập nhật trạng thái vị trí tuyển dụng' };
   }
 }
 

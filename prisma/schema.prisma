@@ -15,6 +15,7 @@ model Job {
   salary       String
   tags         String[]
   description  String
+  status       String        @default("Active") // "Pending", "Active", "Closed"
   createdAt    DateTime      @default(now())
   applications Application[]
 }

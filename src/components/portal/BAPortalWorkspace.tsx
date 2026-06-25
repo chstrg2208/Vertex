@@ -16,8 +16,11 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  Edit2
+  Edit2,
+  Send
 } from 'lucide-react';
+import { updateJobStatus, createJob } from '@/app/actions';
+import { useRouter } from 'next/navigation';
 
 // --- DATA MODEL INTERFACES ---
 export interface StartupLead {
@@ -52,9 +55,11 @@ export interface Ticket {
 interface BAPortalWorkspaceProps {
   locale: 'vi' | 'en';
   currentUser: { name: string; role: 'ta' | 'ba' | 'admin' };
+  jobs?: any[];
 }
 
-export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorkspaceProps) {
+export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BAPortalWorkspaceProps) {
+  const router = useRouter();
   // Tab states
   const [activeTab, setActiveTab] = useState<'pipeline' | 'jobs' | 'tickets' | 'billing'>('pipeline');
 
@@ -68,12 +73,27 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
   ]);
 
   // MOCK STATE - Job specs (Tab 2)
-  const [jobSpecs, setJobSpecs] = useState<JobSpec[]>([
-    { id: 'J-001', startup: 'AlphaTech AI', title: 'Senior Backend Engineer (Python/FastAPI)', budget: '45,000,000 VND / month', status: 'Active', tags: ['Python', 'FastAPI', 'AWS'], description: 'Looking for a backend specialist to build serverless endpoints for LLM orchestration.' },
-    { id: 'J-002', startup: 'Zeta Health', title: 'Lead Full Stack React Native Developer', budget: '55,000,000 VND / month', status: 'Pending', tags: ['React Native', 'TypeScript', 'Node.js'], description: 'Required 4+ years of cross-platform app scaling and HIPAA compliance implementation.' },
-    { id: 'J-003', startup: 'Optima Commerce', title: 'UI/UX Designer & Tailwind Expert', budget: '35,000,000 VND / month', status: 'Active', tags: ['Tailwind CSS', 'Figma', 'React'], description: 'Designing premium glassmorphic commerce dashboards and micro-interactions.' },
-    { id: 'J-004', startup: 'NeoLogistics', title: 'DevOps Engineer (Docker/K8s)', budget: '50,000,000 VND / month', status: 'Closed', tags: ['Docker', 'Kubernetes', 'CI/CD'], description: 'Setup automation pipelines and microservices deployments on local environment.' }
-  ]);
+  const [jobSpecs, setJobSpecs] = useState<JobSpec[]>([]);
+
+  React.useEffect(() => {
+    if (jobs && jobs.length > 0) {
+      setJobSpecs(jobs.map(j => ({
+        id: j.id.toString(),
+        startup: j.company,
+        title: j.title,
+        budget: j.salary,
+        status: (j.status || 'Active') as 'Pending' | 'Active' | 'Closed',
+        tags: j.tags || [],
+        description: j.description || ''
+      })));
+    } else {
+      setJobSpecs([
+        { id: '1', startup: 'VinGroup (Khách hàng)', title: 'Cần thuê 3 Lập trình viên Java Senior', budget: '35,000,000 - 45,000,000 VND / tháng', status: 'Active', tags: ['Java', 'Spring Boot', 'Microservices'], description: 'Cần cung cấp khẩn cấp 3 nhân sự Java Senior phát triển dự án nâng cấp lõi hệ thống VinID. Thời gian dự kiến: 6 tháng làm việc trực tiếp tại văn phòng. Yêu cầu pass vòng phỏng vấn kỹ thuật của ScaleEdge.' },
+        { id: '2', startup: 'Viettel Software (Khách hàng)', title: 'Cần thuê 2 Dev ReactJS / NextJS', budget: '25,000,000 - 32,000,000 VND / tháng', status: 'Active', tags: ['React', 'Next.js', 'CSS/SCSS'], description: 'Dự án chuyển đổi số cổng thông tin nội bộ Viettel. Cần 2 Dev React cứng cáp về giao diện glassmorphic và chuyển động mượt mà. Thời gian dự án: 4 tháng.' },
+        { id: '3', startup: 'Techcombank (Khách hàng)', title: 'Cần 1 Kỹ sư DevOps AWS Platform', budget: '40,000,000 - 55,000,000 VND / tháng', status: 'Active', tags: ['DevOps', 'AWS', 'Kubernetes'], description: 'Thiết kế hạ tầng bảo mật cấp cao trên AWS Cloud phục vụ ngân hàng số. Cần nhân sự DevOps tối thiểu 4 năm kinh nghiệm thực tế, sẵn sàng bắt đầu ngay.' }
+      ]);
+    }
+  }, [jobs]);
 
   // MOCK STATE - Tickets (Tab 3)
   const [tickets, setTickets] = useState<Ticket[]>([
@@ -100,6 +120,16 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
   const [newLeadEmail, setNewLeadEmail] = useState('');
   const [newLeadStatus, setNewLeadStatus] = useState<'contacted' | 'negotiation' | 'partnered'>('contacted');
 
+  // Job Creation Modal State (Tab 2)
+  const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
+  const [newJobTitle, setNewJobTitle] = useState('');
+  const [newJobStartup, setNewJobStartup] = useState('');
+  const [newJobLocation, setNewJobLocation] = useState('');
+  const [newJobBudget, setNewJobBudget] = useState('');
+  const [newJobTags, setNewJobTags] = useState('');
+  const [newJobDesc, setNewJobDesc] = useState('');
+  const [isSavingNewJob, setIsSavingNewJob] = useState(false);
+
   const handleOpenEditSheet = (job: JobSpec) => {
     setSelectedJobSpec(job);
     setEditTitle(job.title);
@@ -111,8 +141,15 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
     setIsSheetOpen(true);
   };
 
-  const handleSaveJobSpec = () => {
+  const handleSaveJobSpec = async () => {
     if (!selectedJobSpec) return;
+    
+    // Call server action if ID is a number
+    const isDbJob = !isNaN(Number(selectedJobSpec.id));
+    if (isDbJob) {
+      await updateJobStatus(Number(selectedJobSpec.id), editStatus);
+    }
+
     const updated = jobSpecs.map(j => {
       if (j.id === selectedJobSpec.id) {
         return {
@@ -130,6 +167,51 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
     setJobSpecs(updated);
     setIsSheetOpen(false);
     setSelectedJobSpec(null);
+  };
+
+  const handleCreateNewJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJobTitle || !newJobStartup || !newJobLocation || !newJobBudget) {
+      alert(locale === 'vi' ? 'Vui lòng nhập đầy đủ các trường thông tin chính!' : 'Please fill in all core fields!');
+      return;
+    }
+    setIsSavingNewJob(true);
+    const tagsArray = newJobTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    const result = await createJob({
+      title: newJobTitle,
+      company: newJobStartup,
+      location: newJobLocation,
+      salary: newJobBudget,
+      tags: tagsArray,
+      description: newJobDesc
+    });
+    setIsSavingNewJob(false);
+    if (result.success) {
+      alert(locale === 'vi' ? 'Tạo yêu cầu tuyển dụng thành công!' : 'Recruitment request created successfully!');
+      setIsCreateJobOpen(false);
+      setNewJobTitle('');
+      setNewJobStartup('');
+      setNewJobLocation('');
+      setNewJobBudget('');
+      setNewJobTags('');
+      setNewJobDesc('');
+      // Update local state
+      setJobSpecs(prev => [
+        {
+          id: (result.job?.id || Date.now()).toString(),
+          startup: newJobStartup,
+          title: newJobTitle,
+          budget: newJobBudget,
+          status: 'Pending',
+          tags: tagsArray,
+          description: newJobDesc
+        },
+        ...prev
+      ]);
+      router.refresh();
+    } else {
+      alert(result.error || 'Failed to create job spec');
+    }
   };
 
   const handleAddLead = (e: React.FormEvent) => {
@@ -396,6 +478,14 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
                   <h1 className="ba-title">{locale === 'vi' ? 'Quản lý Bản mô tả Công việc' : 'Client Job Spec Monitor'}</h1>
                   <p className="ba-subtitle">{locale === 'vi' ? 'Theo dõi, đánh giá và duyệt các vị trí trống được gửi lên bởi startup.' : 'Monitor, evaluate, and approve technical job vacancies submitted by startup partners.'}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateJobOpen(true)}
+                  className="ba-btn-primary"
+                >
+                  <Plus size={16} />
+                  {locale === 'vi' ? 'Tạo yêu cầu mới' : 'Create Job Request'}
+                </button>
               </div>
 
               {/* Job Spec Data Table */}
@@ -444,14 +534,59 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
                           </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditSheet(job)}
-                            className="ba-action-link"
-                          >
-                            <Edit2 size={12} />
-                            {job.status === 'Pending' ? (locale === 'vi' ? 'Duyệt & Sửa' : 'Review & Approve') : (locale === 'vi' ? 'Sửa' : 'Edit')}
-                          </button>
+                          <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                            {job.status === 'Pending' ? (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const jobNum = Number(job.id);
+                                  if (!isNaN(jobNum)) {
+                                    const res = await updateJobStatus(jobNum, 'Active');
+                                    if (res.success) {
+                                      alert(locale === 'vi' ? 'Đã gửi yêu cầu tuyển dụng sang TA thành công!' : 'Recruitment request sent to TA successfully!');
+                                      setJobSpecs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'Active' } : j));
+                                      router.refresh();
+                                    } else {
+                                      alert(res.error || 'Failed');
+                                    }
+                                  }
+                                }}
+                                className="ba-action-link"
+                                style={{
+                                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                  color: '#10b981',
+                                  border: '1px solid rgba(16, 185, 129, 0.2)'
+                                }}
+                              >
+                                <Send size={12} />
+                                {locale === 'vi' ? 'Gửi sang TA' : 'Send to TA'}
+                              </button>
+                            ) : (
+                              <span style={{
+                                fontSize: '11px',
+                                color: '#10b981',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 8px',
+                                background: 'rgba(16, 185, 129, 0.04)',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(16, 185, 129, 0.1)',
+                                fontWeight: 'bold'
+                              }}>
+                                ✓ {locale === 'vi' ? 'Đã gửi TA' : 'Sent to TA'}
+                              </span>
+                            )}
+                            
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditSheet(job)}
+                              className="ba-action-link"
+                            >
+                              <Edit2 size={12} />
+                              {job.status === 'Pending' ? (locale === 'vi' ? 'Duyệt & Sửa' : 'Review & Approve') : (locale === 'vi' ? 'Sửa' : 'Edit')}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -729,6 +864,96 @@ export default function BAPortalWorkspace({ locale, currentUser }: BAPortalWorks
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 4.5. DIALOG / MODAL POPUP (TAB 2: CREATE JOB SPEC) */}
+      {isCreateJobOpen && (
+        <div className="ba-dialog-backdrop">
+          <div onClick={() => setIsCreateJobOpen(false)} style={{ position: 'absolute', inset: 0 }}></div>
+          <form onSubmit={handleCreateNewJob} className="ba-dialog-panel" style={{ maxWidth: '500px' }}>
+            <div className="ba-dialog-header">
+              <h3 className="ba-dialog-title">{locale === 'vi' ? 'Tạo Yêu Cầu Tuyển Dụng Mới' : 'Create New Job Spec'}</h3>
+              <button type="button" onClick={() => setIsCreateJobOpen(false)} className="ba-close-btn">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="ba-dialog-body" style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
+              <div className="ba-form-group">
+                <label className="ba-form-label">{locale === 'vi' ? 'Tiêu đề vị trí tuyển dụng *' : 'Job Title *'}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Senior Node.js Developer"
+                  className="ba-input"
+                  value={newJobTitle}
+                  onChange={(e) => setNewJobTitle(e.target.value)}
+                />
+              </div>
+              <div className="ba-form-group">
+                <label className="ba-form-label">{locale === 'vi' ? 'Startup / Doanh nghiệp khách hàng *' : 'Client Startup *'}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. AlphaTech AI"
+                  className="ba-input"
+                  value={newJobStartup}
+                  onChange={(e) => setNewJobStartup(e.target.value)}
+                />
+              </div>
+              <div className="ba-form-group">
+                <label className="ba-form-label">{locale === 'vi' ? 'Địa điểm làm việc *' : 'Location *'}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Hà Nội (Hybrid)"
+                  className="ba-input"
+                  value={newJobLocation}
+                  onChange={(e) => setNewJobLocation(e.target.value)}
+                />
+              </div>
+              <div className="ba-form-group">
+                <label className="ba-form-label">{locale === 'vi' ? 'Ngân sách tuyển dụng (Mức lương hiển thị) *' : 'Budget (Salary Display) *'}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 35,000,000 - 45,000,000 VND"
+                  className="ba-input"
+                  value={newJobBudget}
+                  onChange={(e) => setNewJobBudget(e.target.value)}
+                />
+              </div>
+              <div className="ba-form-group">
+                <label className="ba-form-label">{locale === 'vi' ? 'Kỹ năng yêu cầu (cách nhau bởi dấu phẩy)' : 'Required tags (comma separated)'}</label>
+                <input
+                  type="text"
+                  placeholder="React, TypeScript, Next.js"
+                  className="ba-input"
+                  value={newJobTags}
+                  onChange={(e) => setNewJobTags(e.target.value)}
+                />
+              </div>
+              <div className="ba-form-group">
+                <label className="ba-form-label">{locale === 'vi' ? 'Mô tả chi tiết công việc' : 'Job Description'}</label>
+                <textarea
+                  rows={4}
+                  className="ba-input"
+                  style={{ resize: 'none', fontFamily: 'inherit' }}
+                  placeholder={locale === 'vi' ? 'Mô tả yêu cầu và quyền lợi...' : 'Enter details...'}
+                  value={newJobDesc}
+                  onChange={(e) => setNewJobDesc(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="ba-sheet-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', gap: '12px' }}>
+              <button type="button" onClick={() => setIsCreateJobOpen(false)} className="ba-btn-secondary" style={{ flex: 1 }}>
+                {locale === 'vi' ? 'Hủy bỏ' : 'Cancel'}
+              </button>
+              <button type="submit" disabled={isSavingNewJob} className="ba-btn-primary" style={{ flex: 1 }}>
+                {isSavingNewJob ? '...' : (locale === 'vi' ? 'Tạo yêu cầu' : 'Create Request')}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

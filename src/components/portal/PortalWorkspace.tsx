@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Users, Briefcase, Layers, Plus, Search, FileText, ChevronRight, Check, X, ShieldAlert, ArrowUpRight, CloudUpload, Play, Terminal, MessageSquare, Star, Settings, Award } from 'lucide-react';
+import { UserCheck, Users, Briefcase, Layers, Plus, Search, FileText, ChevronRight, Check, X, ShieldAlert, ArrowUpRight, CloudUpload, Play, Terminal, MessageSquare, Star, Settings, Award, Sparkles } from 'lucide-react';
 import { createCandidate, createJob, updateApplicationStatus, updateCandidateTAInfo, applyToJob, createPartner, updateApplicationBilling, createAccount } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import ChatTab from '../ChatTab';
@@ -33,6 +33,7 @@ interface Job {
   salary: string;
   tags: string[];
   description: string;
+  status?: string;
 }
 
 interface Partner {
@@ -330,7 +331,7 @@ export default function PortalWorkspace({
   const averageMargin = totalBilling > 0 ? ((totalBilling - totalCost) / totalBilling) * 100 : 0;
 
   // State management
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'talents' | 'add-talent' | 'requests' | 'partners' | 'chat' | 'pipeline' | 'accounts'>('overview');
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'projects' | 'talents' | 'add-talent' | 'requests' | 'partners' | 'chat' | 'pipeline' | 'accounts'>('overview');
 
   useEffect(() => {
     if (currentUser.role === 'admin') {
@@ -343,6 +344,38 @@ export default function PortalWorkspace({
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [viewingCandidateCV, setViewingCandidateCV] = useState<Candidate | null>(null);
 
+  // TA Project Management & Matcher states
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [projectSearchTerm, setProjectSearchTerm] = useState('');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'Active' | 'Pending'>('all');
+  
+  // Custom interactive filter states for matching dev
+  const [filterSkills, setFilterSkills] = useState<string[]>([]);
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterMinRating, setFilterMinRating] = useState<number>(4.0);
+  const [filterMinEnglish, setFilterMinEnglish] = useState<string>('Any');
+  const [filterMaxSalary, setFilterMaxSalary] = useState<string>('');
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      const selectedProj = jobs.find(j => j.id === selectedProjectId);
+      if (selectedProj) {
+        setFilterSkills(selectedProj.tags || []);
+        const cleanLoc = selectedProj.location ? selectedProj.location.split('(')[0].trim() : '';
+        setFilterLocation(cleanLoc);
+        setFilterMaxSalary('');
+        setFilterMinRating(4.0);
+        setFilterMinEnglish('Any');
+      }
+    } else {
+      setFilterSkills([]);
+      setFilterLocation('');
+      setFilterMinRating(4.0);
+      setFilterMinEnglish('Any');
+      setFilterMaxSalary('');
+    }
+  }, [selectedProjectId, jobs]);
+
   // CV Evaluation Tab states inside modal
   const [modalActiveTab, setModalActiveTab] = useState<'cv' | 'assessment'>('cv');
   const [taStatus, setTaStatus] = useState('AVAILABLE');
@@ -351,6 +384,18 @@ export default function PortalWorkspace({
   const [taEnglish, setTaEnglish] = useState('Intermediate');
   const [taSalary, setTaSalary] = useState('Negotiable');
   const [isSavingTAInfo, setIsSavingTAInfo] = useState(false);
+
+  // Advanced Vetting Scorecard & Drag-and-Drop States
+  const [checklistCV, setChecklistCV] = useState(false);
+  const [checklistInterview, setChecklistInterview] = useState(false);
+  const [checklistTech, setChecklistTech] = useState(false);
+  const [checklistCulture, setChecklistCulture] = useState(false);
+  
+  const [algoScore, setAlgoScore] = useState(5);
+  const [archScore, setArchScore] = useState(5);
+  const [commScore, setCommScore] = useState(5);
+  const [taNotesRaw, setTaNotesRaw] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
   // AI Matcher State
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
@@ -410,8 +455,35 @@ export default function PortalWorkspace({
     setViewingCandidateCV(candidate);
     setModalActiveTab('cv');
     setTaStatus(candidate.status || 'AVAILABLE');
-    setTaRating(candidate.rating || 5);
-    setTaNotes(candidate.internalNotes || '');
+    
+    // Parse checklist from notes
+    const notes = candidate.internalNotes || '';
+    setChecklistCV(notes.includes('[✓] CV Screening'));
+    setChecklistInterview(notes.includes('[✓] Initial Interview'));
+    setChecklistTech(notes.includes('[✓] Technical Assessment'));
+    setChecklistCulture(notes.includes('[✓] Cultural Fit'));
+
+    // Parse subscores from notes
+    const algoMatch = notes.match(/- Algorithm & Coding: (\d)/);
+    const archMatch = notes.match(/- Architecture & System Design: (\d)/);
+    const commMatch = notes.match(/- Communication & Teamwork: (\d)/);
+
+    const initialAlgo = algoMatch ? Number(algoMatch[1]) : 5;
+    const initialArch = archMatch ? Number(archMatch[1]) : 5;
+    const initialComm = commMatch ? Number(commMatch[1]) : 5;
+
+    setAlgoScore(initialAlgo);
+    setArchScore(initialArch);
+    setCommScore(initialComm);
+    setTaRating(Math.round((initialAlgo + initialArch + initialComm) / 3));
+
+    // Extract raw notes (anything after ADDITIONAL NOTES:)
+    const rawNotesIndex = notes.indexOf('ADDITIONAL NOTES:\n');
+    const parsedRawNotes = rawNotesIndex !== -1 
+      ? notes.substring(rawNotesIndex + 'ADDITIONAL NOTES:\n'.length) 
+      : notes;
+    setTaNotesRaw(parsedRawNotes);
+
     setTaEnglish(candidate.englishLevel || 'Intermediate');
     setTaSalary(candidate.salaryExpectation || 'Negotiable');
   };
@@ -420,6 +492,7 @@ export default function PortalWorkspace({
   const sidebarTabs = isTA
     ? [
         { id: 'overview', label: pt.tabOverview, icon: <Layers size={16} /> },
+        { id: 'projects', label: locale === 'vi' ? 'Quản lý Dự án' : 'Project Management', icon: <Briefcase size={16} /> },
         { id: 'talents', label: pt.tabTalents, icon: <Users size={16} /> },
         { id: 'pipeline', label: locale === 'vi' ? 'Quy trình & Khớp nối AI' : 'Pipeline & AI Matcher', icon: <UserCheck size={16} /> },
         { id: 'add-talent', label: pt.tabAddTalent, icon: <Plus size={16} /> },
@@ -547,11 +620,27 @@ export default function PortalWorkspace({
   const handleSaveTAInfo = async () => {
     if (!viewingCandidateCV) return;
     setIsSavingTAInfo(true);
+    
+    const calculatedRating = Number(((algoScore + archScore + commScore) / 3).toFixed(1));
+    const formattedNotes = `VETTING CHECKLIST:
+[${checklistCV ? '✓' : ' '}] CV Screening
+[${checklistInterview ? '✓' : ' '}] Initial Interview
+[${checklistTech ? '✓' : ' '}] Technical Assessment
+[${checklistCulture ? '✓' : ' '}] Cultural Fit
+
+TECHNICAL DETAILED RATINGS:
+- Algorithm & Coding: ${algoScore} / 5
+- Architecture & System Design: ${archScore} / 5
+- Communication & Teamwork: ${commScore} / 5
+
+ADDITIONAL NOTES:
+${taNotesRaw}`;
+
     const result = await updateCandidateTAInfo({
       id: viewingCandidateCV.id,
       status: taStatus,
-      rating: Number(taRating),
-      internalNotes: taNotes,
+      rating: calculatedRating,
+      internalNotes: formattedNotes,
       englishLevel: taEnglish,
       salaryExpectation: taSalary
     });
@@ -651,7 +740,7 @@ export default function PortalWorkspace({
   };
 
   if (currentUser.role === 'ba') {
-    return <BAPortalWorkspace locale={locale} currentUser={currentUser} />;
+    return <BAPortalWorkspace locale={locale} currentUser={currentUser} jobs={jobs} />;
   }
 
   return (
@@ -872,6 +961,594 @@ export default function PortalWorkspace({
           </div>
         )}
 
+        {/* SUB-TAB: PROJECT MANAGEMENT & DEV MATCHING */}
+        {activeSubTab === 'projects' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px', animation: 'fadeIn 0.25s ease' }}>
+            
+            {/* Left Column: Project Selector List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
+                  {locale === 'vi' ? 'Danh sách dự án của BA' : 'BA Projects List'}
+                </h3>
+                
+                {/* Search projects */}
+                <div className="search-input-wrapper">
+                  <Search size={14} className="search-icon" />
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder={locale === 'vi' ? 'Tìm kiếm dự án, công ty...' : 'Search projects, companies...'}
+                    value={projectSearchTerm}
+                    onChange={(e) => setProjectSearchTerm(e.target.value)}
+                    style={{ fontSize: '12px', paddingLeft: '30px' }}
+                  />
+                </div>
+
+                {/* Status filter */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {(['all', 'Active', 'Pending'] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      style={{
+                        flex: 1,
+                        padding: '6px 0',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        border: '1px solid var(--border)',
+                        borderRadius: '4px',
+                        background: projectStatusFilter === status ? 'var(--primary)' : 'var(--background)',
+                        color: projectStatusFilter === status ? '#fff' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                      onClick={() => setProjectStatusFilter(status)}
+                    >
+                      {status === 'all' ? (locale === 'vi' ? 'Tất cả' : 'All') : status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Projects List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '600px', overflowY: 'auto' }}>
+                {jobs
+                  .filter((job) => {
+                    const matchesSearch = job.title.toLowerCase().includes(projectSearchTerm.toLowerCase()) ||
+                      job.company.toLowerCase().includes(projectSearchTerm.toLowerCase());
+                    const matchesStatus = projectStatusFilter === 'all' || job.status === projectStatusFilter;
+                    return matchesSearch && matchesStatus;
+                  })
+                  .map((job) => {
+                    const isSelected = selectedProjectId === job.id;
+                    const assignedCount = applications.filter(app => app.jobId === job.id).length;
+                    
+                    return (
+                      <div
+                        key={job.id}
+                        onClick={() => setSelectedProjectId(job.id)}
+                        className="card"
+                        style={{
+                          padding: '14px',
+                          cursor: 'pointer',
+                          border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                          background: isSelected ? 'rgba(79, 70, 229, 0.04)' : 'var(--surface)',
+                          transition: 'all 0.2s',
+                          boxShadow: isSelected ? '0 4px 12px rgba(79, 70, 229, 0.1)' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{job.company}</span>
+                          <span className="badge" style={{
+                            fontSize: '9px',
+                            backgroundColor: job.status === 'Active' ? 'var(--success-bg)' : 'var(--warning-bg)',
+                            color: job.status === 'Active' ? 'var(--success)' : 'var(--warning)',
+                          }}>
+                            {job.status || 'Active'}
+                          </span>
+                        </div>
+                        <h4 style={{ fontSize: '13.5px', fontWeight: 'bold', marginTop: '6px', color: isSelected ? 'var(--primary)' : 'var(--text-main)' }}>
+                          {job.title}
+                        </h4>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          📍 {job.location}
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            💰 {job.salary}
+                          </span>
+                          <span style={{ fontSize: '10.5px', color: 'var(--primary)', fontWeight: 'bold' }}>
+                            👥 {assignedCount} {locale === 'vi' ? 'đã phái cử' : 'assigned'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Right Column: Selected Project Detail & Dev Sourcing Console */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {!selectedProjectId ? (
+                /* Unselected State Placeholder */
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '80px 24px', textAlign: 'center', minHeight: '400px' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(79, 70, 229, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', marginBottom: '8px' }}>
+                    <Briefcase size={32} />
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                    {locale === 'vi' ? 'Chưa Chọn Dự Án' : 'No Project Selected'}
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px', lineHeight: 1.5 }}>
+                    {locale === 'vi' ? 'Vui lòng nhấp chọn một dự án từ danh sách do BA nhận từ khách hàng ở cột bên trái để phân tích yêu cầu tuyển dụng và tự động khớp nối nhân sự phù hợp.' : 'Select a project received by BA from the left list to review recruitment details and match developers automatically.'}
+                  </p>
+                </div>
+              ) : (() => {
+                const selectedProj = jobs.find(j => j.id === selectedProjectId);
+                if (!selectedProj) return null;
+
+                const parseSalary = (salaryStr: string) => {
+                  if (!salaryStr) return 0;
+                  const cleanStr = salaryStr.replace(/[^0-9]/g, '');
+                  const num = parseFloat(cleanStr);
+                  return isNaN(num) ? 0 : num;
+                };
+
+                // Matched Candidates Calculations
+                const matchedDevs = candidates
+                  .filter((c) => {
+                    // Only show AVAILABLE devs
+                    if (c.status !== 'AVAILABLE') return false;
+
+                    // Filter by Rating
+                    const rating = c.rating !== undefined ? Number(c.rating) : 5.0;
+                    if (rating < filterMinRating) return false;
+
+                    // Filter by Location
+                    if (filterLocation) {
+                      const cleanLoc = filterLocation.toLowerCase().trim();
+                      const devLoc = c.location ? c.location.toLowerCase() : '';
+                      if (!devLoc.includes(cleanLoc) && !cleanLoc.includes('remote') && !devLoc.includes('remote')) {
+                        return false;
+                      }
+                    }
+
+                    // Filter by English Level
+                    if (filterMinEnglish !== 'Any') {
+                      const cleanEng = filterMinEnglish.split(' ')[0].toLowerCase(); // e.g. "b1", "b2"
+                      const devEng = c.englishLevel ? c.englishLevel.toLowerCase() : '';
+                      
+                      // Simple priority rank check
+                      const getEnglishRank = (level: string) => {
+                        if (level.includes('c2') || level.includes('native')) return 5;
+                        if (level.includes('c1') || level.includes('advanced')) return 4;
+                        if (level.includes('b2') || level.includes('upper')) return 3;
+                        if (level.includes('b1') || level.includes('intermediate')) return 2;
+                        if (level.includes('a2') || level.includes('elementary')) return 1;
+                        return 0;
+                      };
+
+                      if (getEnglishRank(devEng) < getEnglishRank(cleanEng)) {
+                        return false;
+                      }
+                    }
+
+                    // Filter by Salary
+                    if (filterMaxSalary) {
+                      const maxSal = parseFloat(filterMaxSalary.replace(/[^0-9]/g, ''));
+                      const devSal = parseSalary(c.salaryExpectation);
+                      if (maxSal > 0 && devSal > 0 && devSal > maxSal) {
+                        return false;
+                      }
+                    }
+
+                    return true;
+                  })
+                  .map((candidate) => {
+                    // Match score algorithm
+                    let score = 40; // Base score
+                    
+                    // 1. Skill overlap (45% weight)
+                    const jobTagsLower = filterSkills.map(t => t.toLowerCase());
+                    const matchedSkills = candidate.skills.filter(s => jobTagsLower.includes(s.toLowerCase()));
+                    const missingSkills = filterSkills.filter(t => !candidate.skills.some(s => s.toLowerCase() === t.toLowerCase()));
+                    
+                    if (filterSkills.length > 0) {
+                      score += Math.round((matchedSkills.length / filterSkills.length) * 45);
+                    } else {
+                      score += 45; // If no tags filtered, give full skill score
+                    }
+
+                    // 2. Location match (10% weight)
+                    const projLocClean = selectedProj.location ? selectedProj.location.toLowerCase() : '';
+                    const devLocClean = candidate.location ? candidate.location.toLowerCase() : '';
+                    if (devLocClean.includes(projLocClean) || projLocClean.includes(devLocClean)) {
+                      score += 10;
+                    } else if (devLocClean.includes('remote') || projLocClean.includes('remote') || devLocClean.includes('hybrid') || projLocClean.includes('hybrid')) {
+                      score += 5;
+                    }
+
+                    // 3. Rating score (5% weight)
+                    const rating = candidate.rating !== undefined ? Number(candidate.rating) : 5.0;
+                    score += Math.round((rating / 5) * 5);
+
+                    // Bound to [10, 100]
+                    score = Math.min(100, Math.max(10, score));
+
+                    return {
+                      candidate,
+                      score,
+                      matchedSkills,
+                      missingSkills
+                    };
+                  })
+                  .sort((a, b) => b.score - a.score);
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    
+                    {/* 1. Project Requirements Details Header */}
+                    <div className="card" style={{ padding: '24px', borderLeft: '4px solid var(--primary)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                            {locale === 'vi' ? 'Chi tiết yêu cầu dự án' : 'Project Requirements'}
+                          </span>
+                          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '4px' }}>
+                            {selectedProj.title}
+                          </h2>
+                          <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', gap: '16px' }}>
+                            <span>🏢 <strong>{selectedProj.company}</strong></span>
+                            <span>📍 {selectedProj.location}</span>
+                            <span>💰 {selectedProj.salary}</span>
+                          </div>
+                        </div>
+                        <span className="badge" style={{
+                          backgroundColor: selectedProj.status === 'Active' ? 'var(--success-bg)' : 'var(--warning-bg)',
+                          color: selectedProj.status === 'Active' ? 'var(--success)' : 'var(--warning)',
+                          fontWeight: 'bold',
+                          padding: '6px 12px'
+                        }}>
+                          {selectedProj.status || 'Active'}
+                        </span>
+                      </div>
+
+                      <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                        {selectedProj.description}
+                      </p>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                        {selectedProj.tags.map((tag, idx) => (
+                          <span key={idx} className="job-tag" style={{ background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', fontSize: '11px', padding: '4px 10px' }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 2. Developer AI Filter Console */}
+                    <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface-hover)' }}>
+                      <h3 style={{ fontSize: '14.5px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+                        <Sparkles size={16} fill="var(--primary)" />
+                        {locale === 'vi' ? 'Bộ lọc tìm kiếm ứng viên tương thích' : 'Interactive Candidate Matcher'}
+                      </h3>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+                        {/* Skills interactive tagging */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                            {locale === 'vi' ? 'Bộ kỹ năng yêu cầu (Nhấp để xóa, nhấn Enter để thêm):' : 'Required Technical Skills (Click to remove, Enter to add):'}
+                          </label>
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minHeight: '38px', padding: '6px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--background)' }}>
+                            {filterSkills.map((skill, idx) => (
+                              <span
+                                key={idx}
+                                onClick={() => setFilterSkills(filterSkills.filter(s => s !== skill))}
+                                style={{
+                                  fontSize: '11px',
+                                  background: 'var(--primary)',
+                                  color: '#fff',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Click to remove"
+                              >
+                                {skill} ✕
+                              </span>
+                            ))}
+                            <input
+                              type="text"
+                              placeholder={filterSkills.length === 0 ? (locale === 'vi' ? 'Thêm kỹ năng...' : 'Add skill...') : ''}
+                              style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '12px', color: 'var(--text-main)', flex: 1, minWidth: '80px' }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const val = e.currentTarget.value.trim();
+                                  if (val && !filterSkills.some(s => s.toLowerCase() === val.toLowerCase())) {
+                                    setFilterSkills([...filterSkills, val]);
+                                    e.currentTarget.value = '';
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+
+                          {/* Quick suggestions from original job tags */}
+                          {selectedProj.tags.some(tag => !filterSkills.includes(tag)) && (
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '4px' }}>
+                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                {locale === 'vi' ? 'Gợi ý từ BA:' : 'Sourced from BA:'}
+                              </span>
+                              {selectedProj.tags
+                                .filter(tag => !filterSkills.includes(tag))
+                                .map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    onClick={() => setFilterSkills([...filterSkills, tag])}
+                                    style={{
+                                      fontSize: '10px',
+                                      background: 'var(--background)',
+                                      color: 'var(--text-secondary)',
+                                      border: '1px dashed var(--border)',
+                                      padding: '1px 6px',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    + {tag}
+                                  </span>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Location match */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                            {locale === 'vi' ? 'Khu vực địa lý (Ví dụ: Hà Nội, TP. HCM):' : 'Work Location (e.g. Hanoi, HCMC):'}
+                          </label>
+                          <input
+                            type="text"
+                            className="search-input"
+                            style={{ width: '100%', padding: '10px' }}
+                            placeholder={locale === 'vi' ? 'Nhập địa điểm làm việc...' : 'Enter target location...'}
+                            value={filterLocation}
+                            onChange={(e) => setFilterLocation(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Line 2: Multi-sliders and values */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                        
+                        {/* Rating slider */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Đánh giá tối thiểu:' : 'Min Rating:'}</span>
+                            <span style={{ color: '#ffb100' }}>★ {filterMinRating.toFixed(1)}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1.0"
+                            max="5.0"
+                            step="0.1"
+                            value={filterMinRating}
+                            onChange={(e) => setFilterMinRating(parseFloat(e.target.value))}
+                            style={{ width: '100%', accentColor: 'var(--primary)' }}
+                          />
+                        </div>
+
+                        {/* English Selector */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                            {locale === 'vi' ? 'Tiếng Anh tối thiểu:' : 'Min English Level:'}
+                          </label>
+                          <select
+                            style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '12px', outline: 'none' }}
+                            value={filterMinEnglish}
+                            onChange={(e) => setFilterMinEnglish(e.target.value)}
+                          >
+                            <option value="Any">{locale === 'vi' ? 'Không yêu cầu' : 'Any Level'}</option>
+                            <option value="B1 (Intermediate)">B1 (Intermediate) +</option>
+                            <option value="B2 (Upper-Intermediate)">B2 (Upper) +</option>
+                            <option value="C1 (Advanced)">C1 (Advanced) +</option>
+                          </select>
+                        </div>
+
+                        {/* Salary limit threshold */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                            {locale === 'vi' ? 'Lương kỳ vọng tối đa:' : 'Max Expected Salary:'}
+                          </label>
+                          <input
+                            type="text"
+                            className="search-input"
+                            style={{ width: '100%', padding: '8px', fontSize: '12px' }}
+                            placeholder="e.g. 40,000,000"
+                            value={filterMaxSalary}
+                            onChange={(e) => setFilterMaxSalary(e.target.value)}
+                          />
+                          {filterMaxSalary && !isNaN(parseFloat(filterMaxSalary.replace(/[^0-9]/g, ''))) && (
+                            <div style={{ fontSize: '10px', color: 'var(--primary)', marginTop: '-4px', fontWeight: 'bold' }}>
+                              {formatCurrency(parseFloat(filterMaxSalary.replace(/[^0-9]/g, '')))}
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* 3. Matched Developers List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
+                          {locale === 'vi' ? 'Kết quả khớp nối ứng viên sẵn sàng (AVAILABLE):' : 'Matching Available Developers:'}
+                        </h3>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {locale === 'vi' ? `Tìm thấy ${matchedDevs.length} ứng viên` : `Found ${matchedDevs.length} matches`}
+                        </span>
+                      </div>
+
+                      {matchedDevs.length === 0 ? (
+                        <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          {locale === 'vi' ? 'Không tìm thấy lập trình viên AVAILABLE nào phù hợp với bộ lọc hiện tại.' : 'No available developers matched the current filter conditions.'}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {matchedDevs.map(({ candidate, score, matchedSkills, missingSkills }) => {
+                            const isAssigned = applications.some((app) => app.jobId === selectedProj.id && app.candidateId === candidate.id);
+                            
+                            return (
+                              <div
+                                key={candidate.id}
+                                className="card"
+                                style={{
+                                  padding: '20px',
+                                  display: 'grid',
+                                  gridTemplateColumns: '1fr 180px',
+                                  gap: '24px',
+                                  alignItems: 'center',
+                                  border: '1px solid var(--border)',
+                                  background: 'var(--surface)',
+                                  transition: 'border-color 0.2s',
+                                }}
+                              >
+                                <div>
+                                  {/* Candidate Header */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <h4
+                                      style={{ fontWeight: 'bold', fontSize: '15px', color: 'var(--text-main)', cursor: 'pointer' }}
+                                      onClick={() => handleOpenCVModal(candidate)}
+                                      className="hover-underline"
+                                    >
+                                      {candidate.name}
+                                    </h4>
+                                    
+                                    {/* Gradient Match Score Badge */}
+                                    <span style={{
+                                      fontSize: '11px',
+                                      fontWeight: 'bold',
+                                      background: score >= 80 ? 'linear-gradient(135deg, #10b981, #059669)' : score >= 50 ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                      color: '#fff',
+                                      padding: '2px 8px',
+                                      borderRadius: '20px',
+                                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                                    }}>
+                                      {score}% Match
+                                    </span>
+                                  </div>
+
+                                  <div style={{ fontSize: '12.5px', color: 'var(--primary)', fontWeight: 600, marginTop: '2px' }}>
+                                    {candidate.title}
+                                  </div>
+
+                                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
+                                    {candidate.summary}
+                                  </p>
+
+                                  {/* Dynamic tags split: green for match, gray/red for missing */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11px' }}>
+                                      <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>✓ {locale === 'vi' ? 'Kỹ năng trùng khớp:' : 'Matched:'}</span>
+                                      {matchedSkills.length > 0 ? matchedSkills.map((s, idx) => (
+                                        <span key={idx} style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600 }}>{s}</span>
+                                      )) : <span style={{ color: 'var(--text-muted)' }}>None</span>}
+                                    </div>
+
+                                    {missingSkills.length > 0 && (
+                                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11px' }}>
+                                        <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>✗ {locale === 'vi' ? 'Yêu cầu còn thiếu:' : 'Missing Requirements:'}</span>
+                                        {missingSkills.map((s, idx) => (
+                                          <span key={idx} style={{ background: 'rgba(255, 255, 255, 0.04)', color: 'var(--text-muted)', border: '1px dashed var(--border)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px' }}>{s}</span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Dev Stats & Matching Action Panels */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '1px solid var(--border)', paddingLeft: '24px', alignItems: 'stretch' }}>
+                                  
+                                  {/* Stats details */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <Star size={12} fill="#ffb100" style={{ color: '#ffb100' }} />
+                                      <strong>Rating: {candidate.rating !== undefined ? Number(candidate.rating).toFixed(1) : '5.0'}</strong>
+                                    </div>
+                                    <div>🌐 EN: <strong>{candidate.englishLevel || 'Intermediate'}</strong></div>
+                                    <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                      💵 {candidate.salaryExpectation || 'Negotiable'}
+                                    </div>
+                                  </div>
+
+                                  {isAssigned ? (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        background: 'var(--surface-hover)',
+                                        color: 'var(--text-muted)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '6px',
+                                        textAlign: 'center'
+                                      }}
+                                    >
+                                      ✓ {locale === 'vi' ? 'Đã phái cử' : 'Already Assigned'}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="apply-btn"
+                                      style={{ width: '100%', padding: '8px 12px', fontSize: '12px', fontWeight: 'bold' }}
+                                      onClick={async () => {
+                                        setIsAssigningJobId(candidate.id);
+                                        const res = await applyToJob(selectedProj.id, candidate.id);
+                                        setIsAssigningJobId(null);
+                                        if (res.success) {
+                                          alert(locale === 'vi' ? `✓ Phái cử thành công ${candidate.name} vào dự án ${selectedProj.title}!` : `✓ Successfully assigned ${candidate.name} to ${selectedProj.title}!`);
+                                          router.refresh();
+                                        } else {
+                                          alert(res.error || 'Failed to assign candidate');
+                                        }
+                                      }}
+                                      disabled={isAssigningJobId === candidate.id}
+                                    >
+                                      {isAssigningJobId === candidate.id ? '...' : (locale === 'vi' ? 'Phái cử ngay' : 'Assign to Project')}
+                                    </button>
+                                  )}
+                                  
+                                  <button
+                                    type="button"
+                                    className="nav-tab"
+                                    style={{ margin: 0, width: '100%', padding: '8px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'var(--surface)', textAlign: 'center' }}
+                                    onClick={() => onOpenChat(candidate.name)}
+                                  >
+                                    💬 {locale === 'vi' ? 'Trò chuyện' : 'Chat'}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+            
+          </div>
+        )}
+
         {/* SUB-TAB 2: TALENTS LIST */}
         {activeSubTab === 'talents' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -970,149 +1647,308 @@ export default function PortalWorkspace({
 
         {/* SUB-TAB 3: ADD TALENT & AI CV PARSER */}
         {activeSubTab === 'add-talent' && (
-          <div style={{ display: 'grid', gridTemplateColumns: parsedData ? '1fr 1fr' : '1fr', gap: '24px' }}>
-            
-            {/* Left box: Upload CV file */}
-            <div className="card" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifySelf: 'stretch', gap: '20px' }}>
-              <div style={{ border: '2px dashed var(--border)', padding: '40px 20px', borderRadius: '12px', background: 'rgba(79, 70, 229, 0.02)' }}>
-                <CloudUpload size={48} style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-                <h4>{pt.uploadTitle}</h4>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', marginBottom: '24px' }}>
-                  {pt.uploadSub}
-                </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes scanLaser {
+                0% { top: 0%; opacity: 0.8; }
+                50% { top: 100%; opacity: 0.8; }
+                100% { top: 0%; opacity: 0.8; }
+              }
+              .laser-bar {
+                position: absolute;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background: linear-gradient(90deg, transparent, #4f46e5, #10b981, #4f46e5, transparent);
+                box-shadow: 0 0 10px #4f46e5, 0 0 20px #10b981;
+                animation: scanLaser 3s infinite linear;
+                z-index: 5;
+              }
+              .drag-zone {
+                transition: all 0.3s ease;
+                border: 2px dashed var(--border);
+                background: rgba(79, 70, 229, 0.01);
+              }
+              .drag-zone.dragging {
+                border-color: var(--primary);
+                background: rgba(79, 70, 229, 0.06);
+                box-shadow: 0 0 15px rgba(79, 70, 229, 0.15);
+                transform: scale(1.01);
+              }
+              .ocr-badge {
+                position: absolute;
+                font-size: 9px;
+                padding: 1px 4px;
+                border-radius: 3px;
+                font-weight: bold;
+                top: -15px;
+                left: 0;
+                line-height: 1;
+              }
+            `}} />
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: (isParsing || parsedData) ? '1fr 1.2fr' : '1fr', gap: '24px' }}>
+              
+              {/* Left Column: Upload Zone or PDF Laser Scan Viewer */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* 1. Drag and Drop Uploader */}
+                <div 
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file && file.type === 'application/pdf') {
+                      setFileName(file.name);
+                      setIsFileUploaded(true);
+                      setParsedData(null);
+                    } else {
+                      alert(locale === 'vi' ? 'Vui lòng tải lên file định dạng PDF!' : 'Please upload a PDF file!');
+                    }
+                  }}
+                  className={`card drag-zone ${isDragging ? 'dragging' : ''}`}
+                  style={{ padding: '32px', textAlign: 'center' }}
+                >
                   <input
                     type="file"
                     accept=".pdf"
-                    id="cv-file-upload"
+                    id="cv-file-upload-input"
                     style={{ display: 'none' }}
                     onChange={handleFileUpload}
                   />
-                  <label
-                    htmlFor="cv-file-upload"
-                    className="apply-btn"
-                    style={{ padding: '10px 20px', fontSize: '13.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    {pt.btnUpload}
+                  <label htmlFor="cv-file-upload-input" style={{ cursor: 'pointer', display: 'block' }}>
+                    <CloudUpload size={48} style={{ color: 'var(--primary)', marginBottom: '16px', transition: 'transform 0.2s' }} />
+                    <h4 style={{ fontWeight: 'bold' }}>{pt.uploadTitle}</h4>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', marginBottom: '20px' }}>
+                      {pt.uploadSub}
+                    </p>
+                    <span className="apply-btn" style={{ display: 'inline-flex', padding: '10px 20px', fontSize: '13px', alignItems: 'center', gap: '6px' }}>
+                      {pt.btnUpload}
+                    </span>
                   </label>
 
                   {isFileUploaded && (
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success)' }}>
-                      {pt.fileReceived} {fileName}
+                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <FileText size={16} style={{ color: 'var(--primary)' }} />
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success)' }}>
+                        {fileName}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setIsFileUploaded(false);
+                          setFileName('');
+                          setParsedData(null);
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+                      >
+                        [✕]
+                      </button>
                     </div>
                   )}
                 </div>
+
+                {/* Parsing trigger and sandbox demo */}
+                <div className="card" style={{ padding: '20px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    className="apply-btn"
+                    style={{ background: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px', opacity: isFileUploaded ? 1 : 0.6 }}
+                    onClick={triggerParsingSequence}
+                    disabled={!isFileUploaded || isParsing}
+                  >
+                    <Play size={16} />
+                    {isParsing ? pt.btnExtracting : pt.btnExtract}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}
+                    onClick={runDemoParser}
+                    disabled={isParsing}
+                  >
+                    {pt.btnDemo}
+                  </button>
+                </div>
+
+                {/* PDF Laser Scanning Screen */}
+                {isParsing && (
+                  <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden', minHeight: '360px', background: 'var(--surface-hover)', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
+                    <div className="laser-bar" />
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Sparkles size={14} className="animate-spin" /> AI ENGINE SCANNING DOCUMENT
+                      </span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Page 1 of 1</span>
+                    </div>
+
+                    {/* Simulating document contents being scanned */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', opacity: 0.4 }}>
+                      <div style={{ width: '40%', height: '16px', background: 'var(--text-muted)', borderRadius: '4px' }} />
+                      <div style={{ width: '25%', height: '10px', background: 'var(--text-muted)', borderRadius: '4px' }} />
+                      <div style={{ width: '90%', height: '8px', background: 'var(--text-muted)', borderRadius: '4px', marginTop: '10px' }} />
+                      <div style={{ width: '85%', height: '8px', background: 'var(--text-muted)', borderRadius: '4px' }} />
+                      
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                        <div style={{ width: '60px', height: '20px', background: 'var(--text-muted)', borderRadius: '10px' }} />
+                        <div style={{ width: '80px', height: '20px', background: 'var(--text-muted)', borderRadius: '10px' }} />
+                        <div style={{ width: '50px', height: '20px', background: 'var(--text-muted)', borderRadius: '10px' }} />
+                      </div>
+
+                      <div style={{ width: '30%', height: '12px', background: 'var(--text-muted)', borderRadius: '4px', marginTop: '15px' }} />
+                      <div style={{ width: '70%', height: '8px', background: 'var(--text-muted)', borderRadius: '4px' }} />
+                      <div style={{ width: '60%', height: '8px', background: 'var(--text-muted)', borderRadius: '4px' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Scanned Highlights Viewer (OCR view) */}
+                {parsedData && !isParsing && (
+                  <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border)', background: 'var(--surface-hover)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        ✓ NLP ANALYZER HIGHLIGHTED MATCHES
+                      </span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Page 1 of 1</span>
+                    </div>
+
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      
+                      {/* Name highlight */}
+                      <div style={{ position: 'relative', border: '1px solid #10b981', padding: '8px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.03)' }}>
+                        <span className="ocr-badge" style={{ backgroundColor: '#10b981', color: '#fff' }}>[NER] FullName</span>
+                        <strong style={{ fontSize: '15px' }}>{newName}</strong>
+                      </div>
+
+                      {/* Title highlight */}
+                      <div style={{ position: 'relative', border: '1px solid var(--primary)', padding: '8px', borderRadius: '4px', background: 'rgba(79, 70, 229, 0.03)' }}>
+                        <span className="ocr-badge" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>[CLASSIFIER] Target Title</span>
+                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)' }}>{newTitle}</div>
+                      </div>
+
+                      {/* Contact row highlight */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ position: 'relative', border: '1px solid #3b82f6', padding: '8px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.03)' }}>
+                          <span className="ocr-badge" style={{ backgroundColor: '#3b82f6', color: '#fff' }}>[REGEX] Email</span>
+                          <span style={{ fontSize: '12px', fontFamily: 'monospace' }}>{newEmail}</span>
+                        </div>
+                        <div style={{ position: 'relative', border: '1px solid #eab308', padding: '8px', borderRadius: '4px', background: 'rgba(234, 179, 8, 0.03)' }}>
+                          <span className="ocr-badge" style={{ backgroundColor: '#eab308', color: '#fff' }}>[REGEX] Phone</span>
+                          <span style={{ fontSize: '12px', fontFamily: 'monospace' }}>{newPhone}</span>
+                        </div>
+                      </div>
+
+                      {/* Skills highlight */}
+                      <div style={{ position: 'relative', border: '1px solid #a855f7', padding: '12px 8px 8px 8px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.03)' }}>
+                        <span className="ocr-badge" style={{ backgroundColor: '#a855f7', color: '#fff' }}>[KEYWORD] Skill Tree</span>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+                          {newSkills.split(',').map((s) => s.trim()).filter(s => s.length > 0).map((skill, idx) => (
+                            <span key={idx} className="cv-skill-badge" style={{ fontSize: '10px', background: '#a855f7', color: '#fff' }}>
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <button
-                  type="button"
-                  className="apply-btn"
-                  style={{ background: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  onClick={triggerParsingSequence}
-                  disabled={!isFileUploaded || isParsing}
-                >
-                  <Play size={16} />
-                  {isParsing ? pt.btnExtracting : pt.btnExtract}
-                </button>
+              {/* Right Column: AI Terminal and Extracted Forms Editor */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}
-                  onClick={runDemoParser}
-                  disabled={isParsing}
-                >
-                  {pt.btnDemo}
-                </button>
-              </div>
-
-              {/* Parser Output Logs (Terminal style) */}
-              {isParsing || parseSteps.length > 0 ? (
-                <div style={{
-                  background: '#0d1117',
-                  color: '#39d353',
-                  fontFamily: 'monospace',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  textAlign: 'left',
-                  fontSize: '11.5px',
-                  lineHeight: '1.5',
-                  maxHeight: '220px',
-                  overflowY: 'auto'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #21262d', paddingBottom: '6px', marginBottom: '8px', color: '#8b949e' }}>
-                    <Terminal size={14} />
-                    <span>{pt.terminalTitle}</span>
-                  </div>
-                  {parseSteps.map((step, idx) => (
-                    <div key={idx} style={{ marginBottom: '4px' }}>
-                      {step}
+                {/* 1. Terminal logs */}
+                {(isParsing || parseSteps.length > 0) && (
+                  <div className="card" style={{
+                    background: '#0d1117',
+                    color: '#39d353',
+                    fontFamily: 'monospace',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    textAlign: 'left',
+                    fontSize: '11.5px',
+                    lineHeight: '1.6',
+                    maxHeight: '150px',
+                    overflowY: 'auto',
+                    border: '1px solid #21262d'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #21262d', paddingBottom: '6px', marginBottom: '8px', color: '#8b949e' }}>
+                      <Terminal size={14} />
+                      <span>{pt.terminalTitle}</span>
                     </div>
-                  ))}
-                  {isParsing && (
-                    <div className="animate-pulse" style={{ animation: 'pulse 1s infinite' }}>{pt.terminalRunning}</div>
-                  )}
-                </div>
-              ) : null}
-            </div>
-
-            {/* Right box: Extracted Fields (Forms) */}
-            {parsedData && (
-              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', animation: 'slideLeft 0.3s ease' }}>
-                <h3 style={{ fontSize: '16px', color: 'var(--success)' }}>{pt.extractedTitle}</h3>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-8px' }}>
-                  {pt.extractedSub}
-                </p>
-
-                <div className="form-group">
-                  <label>{pt.fieldFullName}</label>
-                  <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} />
-                </div>
-
-                <div className="form-group">
-                  <label>{pt.fieldDesiredRole}</label>
-                  <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{pt.fieldEmail}</label>
-                    <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                    {parseSteps.map((step, idx) => (
+                      <div key={idx} style={{ marginBottom: '4px' }}>
+                        {step}
+                      </div>
+                    ))}
+                    {isParsing && (
+                      <div className="animate-pulse" style={{ color: '#58a6ff' }}>{pt.terminalRunning}</div>
+                    )}
                   </div>
-                  <div className="form-group">
-                    <label>{pt.fieldPhone}</label>
-                    <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                )}
+
+                {/* 2. Extracted Fields Editor */}
+                {parsedData && (
+                  <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', animation: 'slideLeft 0.3s ease' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--success)' }}>{pt.extractedTitle}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+                      {pt.extractedSub}
+                    </p>
+
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600 }}>{pt.fieldFullName}</label>
+                      <input type="text" className="search-input" style={{ width: '100%' }} value={newName} onChange={(e) => setNewName(e.target.value)} />
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600 }}>{pt.fieldDesiredRole}</label>
+                      <input type="text" className="search-input" style={{ width: '100%' }} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div className="form-group">
+                        <label style={{ fontWeight: 600 }}>{pt.fieldEmail}</label>
+                        <input type="email" className="search-input" style={{ width: '100%' }} value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                      </div>
+                      <div className="form-group">
+                        <label style={{ fontWeight: 600 }}>{pt.fieldPhone}</label>
+                        <input type="text" className="search-input" style={{ width: '100%' }} value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600 }}>{pt.fieldLocation}</label>
+                      <input type="text" className="search-input" style={{ width: '100%' }} value={newLocation} onChange={(e) => setNewLocation(e.target.value)} />
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600 }}>{pt.fieldSkills}</label>
+                      <input type="text" className="search-input" style={{ width: '100%' }} value={newSkills} onChange={(e) => setNewSkills(e.target.value)} />
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontWeight: 600 }}>{pt.fieldSummary}</label>
+                      <textarea rows={3} className="search-input" style={{ width: '100%', fontFamily: 'inherit', padding: '10px' }} value={newSummary} onChange={(e) => setNewSummary(e.target.value)} />
+                    </div>
+
+                    <button
+                      type="button"
+                      className="apply-btn"
+                      style={{ background: 'var(--success)', width: '100%', padding: '12px', fontWeight: 'bold' }}
+                      onClick={handleSaveParsedCandidate}
+                    >
+                      {pt.btnSaveCandidate}
+                    </button>
                   </div>
-                </div>
+                )}
 
-                <div className="form-group">
-                  <label>{pt.fieldLocation}</label>
-                  <input type="text" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} />
-                </div>
-
-                <div className="form-group">
-                  <label>{pt.fieldSkills}</label>
-                  <input type="text" value={newSkills} onChange={(e) => setNewSkills(e.target.value)} />
-                </div>
-
-                <div className="form-group">
-                  <label>{pt.fieldSummary}</label>
-                  <textarea rows={3} value={newSummary} onChange={(e) => setNewSummary(e.target.value)} />
-                </div>
-
-                <button
-                  type="button"
-                  className="apply-btn"
-                  style={{ background: 'var(--success)', width: '100%', padding: '12px' }}
-                  onClick={handleSaveParsedCandidate}
-                >
-                  {pt.btnSaveCandidate}
-                </button>
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -1205,6 +2041,16 @@ export default function PortalWorkspace({
                   return (
                     <div
                       key={stage}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        const appIdStr = e.dataTransfer.getData('text/plain');
+                        if (appIdStr) {
+                          const appId = Number(appIdStr);
+                          await updateApplicationStatus(appId, stage);
+                          router.refresh();
+                        }
+                      }}
                       style={{
                         background: 'var(--surface)',
                         borderRadius: '12px',
@@ -1214,7 +2060,8 @@ export default function PortalWorkspace({
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '12px',
-                        minWidth: '160px'
+                        minWidth: '160px',
+                        transition: 'background-color 0.2s'
                       }}
                     >
                       {/* Column Header */}
@@ -1232,12 +2079,17 @@ export default function PortalWorkspace({
                         {stageApps.map((app) => (
                           <div
                             key={app.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', app.id.toString());
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
                             style={{
                               background: 'var(--background)',
                               border: '1px solid var(--border)',
                               borderRadius: '8px',
                               padding: '10px',
-                              cursor: 'pointer',
+                              cursor: 'grab',
                               position: 'relative',
                               transition: 'transform 0.2s, box-shadow 0.2s',
                             }}
@@ -1310,7 +2162,7 @@ export default function PortalWorkspace({
                     onChange={(e) => setSelectedJobId(Number(e.target.value) || null)}
                   >
                     <option value="">-- {locale === 'vi' ? 'Chọn vị trí trống' : 'Select an open role'} --</option>
-                    {jobs.map((j) => (
+                    {jobs.filter(j => j.status === 'Active').map((j) => (
                       <option key={j.id} value={j.id}>
                         {j.title} ({j.company}) - Tag: [{j.tags.join(', ')}]
                       </option>
@@ -1322,24 +2174,26 @@ export default function PortalWorkspace({
                   const selectedJob = jobs.find((j) => j.id === selectedJobId);
                   if (!selectedJob) return null;
 
-                  // Rank candidates based on skill match
-                  const matchedCandidates = candidates.map((candidate) => {
-                    const jobTagsLower = selectedJob.tags.map((t) => t.toLowerCase());
-                    const matchedSkills = candidate.skills.filter((s) => jobTagsLower.includes(s.toLowerCase()));
-                    const missingSkills = selectedJob.tags.filter((t) => !candidate.skills.some((s) => s.toLowerCase() === t.toLowerCase()));
-                    
-                    // Match score: percent of required skills covered
-                    const score = selectedJob.tags.length > 0 
-                      ? Math.round((matchedSkills.length / selectedJob.tags.length) * 100)
-                      : 50;
+                  // Rank AVAILABLE candidates based on skill match
+                  const matchedCandidates = candidates
+                    .filter((c) => c.status === 'AVAILABLE')
+                    .map((candidate) => {
+                      const jobTagsLower = selectedJob.tags.map((t) => t.toLowerCase());
+                      const matchedSkills = candidate.skills.filter((s) => jobTagsLower.includes(s.toLowerCase()));
+                      const missingSkills = selectedJob.tags.filter((t) => !candidate.skills.some((s) => s.toLowerCase() === t.toLowerCase()));
+                      
+                      // Match score: percent of required skills covered
+                      const score = selectedJob.tags.length > 0 
+                        ? Math.round((matchedSkills.length / selectedJob.tags.length) * 100)
+                        : 50;
 
-                    return {
-                      candidate,
-                      score,
-                      matchedSkills,
-                      missingSkills,
-                    };
-                  }).sort((a, b) => b.score - a.score);
+                      return {
+                        candidate,
+                        score,
+                        matchedSkills,
+                        missingSkills,
+                      };
+                    }).sort((a, b) => b.score - a.score);
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.25s ease' }}>
@@ -1905,6 +2759,9 @@ export default function PortalWorkspace({
               activeContactName={activeChatContactName}
               onSelectContactName={onSelectChatContactName}
               locale={locale}
+              candidates={candidates}
+              partners={partners}
+              jobs={jobs}
             />
           </div>
         )}
@@ -2016,7 +2873,96 @@ export default function PortalWorkspace({
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.2s ease' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.2s ease' }}>
+                  
+                  {/* 1. Vetting Checklist */}
+                  <div className="card" style={{ padding: '16px', background: 'var(--surface-hover)', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid var(--border)' }}>
+                    <h5 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', borderBottom: '1px solid var(--border)', paddingBottom: '6px', margin: 0 }}>
+                      📋 {locale === 'vi' ? 'Quy trình kiểm tra (Checklist)' : 'Vetting Checklist'}
+                    </h5>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={checklistCV} onChange={(e) => setChecklistCV(e.target.checked)} />
+                        <span>CV Screening</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={checklistInterview} onChange={(e) => setChecklistInterview(e.target.checked)} />
+                        <span>Initial Interview</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={checklistTech} onChange={(e) => setChecklistTech(e.target.checked)} />
+                        <span>Technical Assessment</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={checklistCulture} onChange={(e) => setChecklistCulture(e.target.checked)} />
+                        <span>Cultural Fit & English</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 2. Technical Scorecard Subscores */}
+                  <div className="card" style={{ padding: '16px', background: 'var(--surface-hover)', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
+                      <h5 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', margin: 0 }}>
+                        ⭐ {locale === 'vi' ? 'Tiêu chí đánh giá chuyên môn' : 'Technical Evaluation Criteria'}
+                      </h5>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffb100' }}>
+                        Avg: ★ {((algoScore + archScore + commScore) / 3).toFixed(1)} / 5.0
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                      {/* Subscore 1: Coding & Algo */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px' }}>{locale === 'vi' ? '1. Thuật toán & Tư duy Code:' : '1. Algorithm & Clean Code:'}</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              style={{ cursor: 'pointer', color: star <= algoScore ? '#ffb100' : 'var(--border)' }}
+                              fill={star <= algoScore ? '#ffb100' : 'none'}
+                              onClick={() => setAlgoScore(star)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Subscore 2: Architecture & Design */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px' }}>{locale === 'vi' ? '2. Kiến trúc & Hệ thống:' : '2. Architecture & Systems:'}</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              style={{ cursor: 'pointer', color: star <= archScore ? '#ffb100' : 'var(--border)' }}
+                              fill={star <= archScore ? '#ffb100' : 'none'}
+                              onClick={() => setArchScore(star)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Subscore 3: Soft Skills & Teamwork */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px' }}>{locale === 'vi' ? '3. Kỹ năng mềm & Giao tiếp:' : '3. Communication & Teamwork:'}</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              style={{ cursor: 'pointer', color: star <= commScore ? '#ffb100' : 'var(--border)' }}
+                              fill={star <= commScore ? '#ffb100' : 'none'}
+                              onClick={() => setCommScore(star)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Availability and Expected Salary */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Trạng thái hoạt động' : 'Availability Status'}</label>
@@ -2025,40 +2971,11 @@ export default function PortalWorkspace({
                         value={taStatus}
                         onChange={(e) => setTaStatus(e.target.value)}
                       >
-                        <option value="AVAILABLE">{locale === 'vi' ? 'Trống dự án (Available)' : 'Available'}</option>
-                        <option value="VETTING">{locale === 'vi' ? 'Đang đánh giá (Vetting)' : 'Vetting'}</option>
-                        <option value="PLACED">{locale === 'vi' ? 'Đã phái cử (Placed)' : 'Placed'}</option>
-                        <option value="ON_LEAVE">{locale === 'vi' ? 'Nghỉ phép (On Leave)' : 'On Leave'}</option>
+                        <option value="AVAILABLE">{locale === 'vi' ? 'Trống dự án (AVAILABLE)' : 'Available'}</option>
+                        <option value="VETTING">{locale === 'vi' ? 'Đang đánh giá (VETTING)' : 'Vetting'}</option>
+                        <option value="PLACED">{locale === 'vi' ? 'Đã phái cử (PLACED)' : 'Placed'}</option>
+                        <option value="ON_LEAVE">{locale === 'vi' ? 'Nghỉ phép (ON_LEAVE)' : 'On Leave'}</option>
                       </select>
-                    </div>
-
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Điểm đánh giá kỹ thuật' : 'Technical Rating (1-5)'}</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            size={22}
-                            style={{ cursor: 'pointer', color: star <= taRating ? '#ffb100' : 'var(--border)' }}
-                            fill={star <= taRating ? '#ffb100' : 'none'}
-                            onClick={() => setTaRating(star)}
-                          />
-                        ))}
-                        <span style={{ fontWeight: 'bold', fontSize: '14px', marginLeft: '6px' }}>{taRating.toFixed(1)} / 5.0</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Trình độ tiếng Anh' : 'English Level'}</label>
-                      <input
-                        type="text"
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none' }}
-                        placeholder="e.g. IELTS 6.5, TOEIC 850, B2"
-                        value={taEnglish}
-                        onChange={(e) => setTaEnglish(e.target.value)}
-                      />
                     </div>
 
                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -2066,33 +2983,153 @@ export default function PortalWorkspace({
                       <input
                         type="text"
                         style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none' }}
-                        placeholder="e.g. 35,000,000 VND / tháng"
+                        placeholder="e.g. 35,000,000"
                         value={taSalary}
                         onChange={(e) => setTaSalary(e.target.value)}
                       />
+                      {/* Live format salary preview */}
+                      {!isNaN(parseFloat(taSalary.replace(/[^0-9]/g, ''))) && (
+                        <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 'bold', marginTop: '2px' }}>
+                          💵 {formatCurrency(parseFloat(taSalary.replace(/[^0-9]/g, '')))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
+                  {/* 4. English Level Presets */}
                   <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Ghi chú phỏng vấn & Nhận xét nội bộ' : 'Interview & Vetting Notes'}</label>
-                    <textarea
-                      rows={5}
-                      style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
-                      placeholder={locale === 'vi' ? 'Nhập ghi chú chi tiết về ứng viên sau khi đánh giá...' : 'Enter candidate notes after assessment...'}
-                      value={taNotes}
-                      onChange={(e) => setTaNotes(e.target.value)}
+                    <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Trình độ tiếng Anh' : 'English Level'}</label>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                      {['A1 (Beginner)', 'A2 (Elementary)', 'B1 (Intermediate)', 'B2 (Upper-Intermediate)', 'C1 (Advanced)', 'C2 (Native)', 'IELTS 6.5', 'TOEIC 850'].map((preset) => (
+                        <span
+                          key={preset}
+                          onClick={() => setTaEnglish(preset)}
+                          style={{
+                            fontSize: '11px',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            background: taEnglish === preset ? 'var(--primary-light)' : 'var(--background)',
+                            color: taEnglish === preset ? 'var(--primary)' : 'var(--text-secondary)',
+                            border: taEnglish === preset ? '1px solid var(--primary)' : '1px solid var(--border)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          {preset}
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none' }}
+                      placeholder="e.g. IELTS 6.5, Custom Level"
+                      value={taEnglish}
+                      onChange={(e) => setTaEnglish(e.target.value)}
                     />
                   </div>
 
-                  <button
-                    type="button"
-                    className="apply-btn"
-                    style={{ width: '100%', padding: '12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13.5px', marginTop: '8px' }}
-                    onClick={handleSaveTAInfo}
-                    disabled={isSavingTAInfo}
-                  >
-                    {isSavingTAInfo ? (locale === 'vi' ? 'Đang lưu...' : 'Saving...') : (locale === 'vi' ? 'Lưu Đánh Giá Nhân Sự' : 'Save Internal Assessment')}
-                  </button>
+                  {/* 5. Vetting & Interview notes */}
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Ghi chú phỏng vấn & Nhận xét nội bộ' : 'Interview & Vetting Notes'}</label>
+                    <textarea
+                      rows={4}
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                      placeholder={locale === 'vi' ? 'Nhập ghi chú chi tiết về ứng viên sau khi đánh giá...' : 'Enter candidate notes after assessment...'}
+                      value={taNotesRaw}
+                      onChange={(e) => setTaNotesRaw(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Action buttons */}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                    {/* Approve Shortcut */}
+                    <button
+                      type="button"
+                      className="apply-btn"
+                      style={{
+                        flex: 1.2,
+                        padding: '12px',
+                        background: 'var(--success)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '13.5px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
+                      }}
+                      onClick={async () => {
+                        setChecklistCV(true);
+                        setChecklistInterview(true);
+                        setChecklistTech(true);
+                        setChecklistCulture(true);
+                        setTaStatus('AVAILABLE');
+                        
+                        setTimeout(async () => {
+                          setIsSavingTAInfo(true);
+                          const calculatedRating = Number(((algoScore + archScore + commScore) / 3).toFixed(1));
+                          const formattedNotes = `VETTING CHECKLIST:
+[✓] CV Screening
+[✓] Initial Interview
+[✓] Technical Assessment
+[✓] Cultural Fit
+
+TECHNICAL DETAILED RATINGS:
+- Algorithm & Coding: ${algoScore} / 5
+- Architecture & System Design: ${archScore} / 5
+- Communication & Teamwork: ${commScore} / 5
+
+ADDITIONAL NOTES:
+${taNotesRaw || (locale === 'vi' ? 'Đã phỏng vấn đạt yêu cầu chuyên môn và tiếng Anh.' : 'Pass technical vetting and English requirements.')}`;
+
+                          const result = await updateCandidateTAInfo({
+                            id: viewingCandidateCV.id,
+                            status: 'AVAILABLE',
+                            rating: calculatedRating,
+                            internalNotes: formattedNotes,
+                            englishLevel: taEnglish,
+                            salaryExpectation: taSalary
+                          });
+                          setIsSavingTAInfo(false);
+                          if (result.success) {
+                            alert(locale === 'vi' ? '✓ Đã duyệt ứng viên AVAILABLE thành công!' : '✓ Candidate approved & set to AVAILABLE!');
+                            setViewingCandidateCV(null);
+                            router.refresh();
+                          } else {
+                            alert(result.error || 'Error');
+                          }
+                        }, 100);
+                      }}
+                      disabled={isSavingTAInfo}
+                    >
+                      🚀 {locale === 'vi' ? 'Phê duyệt nhanh (AVAILABLE)' : 'Approve Candidate (AVAILABLE)'}
+                    </button>
+
+                    {/* Standard Save */}
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: 'transparent',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '13.5px'
+                      }}
+                      onClick={handleSaveTAInfo}
+                      disabled={isSavingTAInfo}
+                    >
+                      {isSavingTAInfo ? '...' : (locale === 'vi' ? 'Lưu Đánh Giá' : 'Save Scorecard')}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

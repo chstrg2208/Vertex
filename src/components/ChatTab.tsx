@@ -22,25 +22,92 @@ interface ChatTabProps {
   activeContactName: string | null;
   onSelectContactName: (name: string | null) => void;
   locale: 'vi' | 'en';
+  candidates?: any[];
+  partners?: any[];
+  jobs?: any[];
 }
 
-export default function ChatTab({ messages, currentUser, activeContactName, onSelectContactName, locale }: ChatTabProps) {
+export default function ChatTab({ 
+  messages, 
+  currentUser, 
+  activeContactName, 
+  onSelectContactName, 
+  locale,
+  candidates = [],
+  partners = [],
+  jobs = []
+}: ChatTabProps) {
   const router = useRouter();
   const [typedMessage, setTypedMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Group or determine who the contact list consists of
-  const contacts = currentUser.role === 'employer'
-    ? [{ id: 'candidate', name: 'Nguyễn Văn A', role: 'candidate', lastMsg: locale === 'vi' ? 'Xác nhận lịch phỏng vấn ạ' : 'Interview confirmed' }]
-    : [{ id: 'recruiter', name: 'Lê Minh Tuấn (Recruiter)', role: 'recruiter', lastMsg: locale === 'vi' ? 'Hẹn gặp em vào phỏng vấn nhé' : 'See you at the interview' }];
+  // Group or determine who the contact list consists of dynamically
+  const contacts = React.useMemo(() => {
+    if (currentUser.role === 'candidate') {
+      return [{ id: 'recruiter', name: 'Lê Minh Tuấn (Recruiter)', role: 'recruiter', lastMsg: locale === 'vi' ? 'Hẹn gặp em vào phỏng vấn nhé' : 'See you at the interview' }];
+    }
+
+    // Recruiter view: merge candidates and partner clients
+    const candidateContacts = candidates.map(c => {
+      const candidateMsgs = messages.filter(m => 
+        (m.sender === 'recruiter' && m.recipient === c.name) || 
+        (m.sender === c.name && m.recipient === 'recruiter') ||
+        (c.name === 'Nguyễn Văn A' && (
+          (m.sender === 'recruiter' && m.recipient === 'candidate') ||
+          (m.sender === 'candidate' && m.recipient === 'recruiter')
+        ))
+      );
+      const lastMsgText = candidateMsgs.length > 0 
+        ? candidateMsgs[candidateMsgs.length - 1].message 
+        : (locale === 'vi' ? 'Nhấp để bắt đầu trò chuyện' : 'Click to start chat');
+
+      return {
+        id: `candidate_${c.id}`,
+        name: c.name,
+        role: 'candidate',
+        lastMsg: lastMsgText.length > 30 ? lastMsgText.substring(0, 30) + '...' : lastMsgText
+      };
+    });
+
+    const partnerContacts = partners.map(p => {
+      const partnerMsgs = messages.filter(m => 
+        (m.sender === 'recruiter' && m.recipient === p.name) || 
+        (m.sender === p.name && m.recipient === 'recruiter')
+      );
+      const lastMsgText = partnerMsgs.length > 0 
+        ? partnerMsgs[partnerMsgs.length - 1].message 
+        : (locale === 'vi' ? 'Đại diện đối tác cung ứng' : 'Startup client representative');
+
+      return {
+        id: `partner_${p.id}`,
+        name: p.name,
+        role: 'partner',
+        lastMsg: lastMsgText.length > 30 ? lastMsgText.substring(0, 30) + '...' : lastMsgText
+      };
+    });
+
+    const list = [...candidateContacts, ...partnerContacts];
+
+    // Ensure Nguyễn Văn A exists as default fallback contact if candidate list is empty
+    if (list.length === 0) {
+      list.push({
+        id: 'candidate_default',
+        name: 'Nguyễn Văn A',
+        role: 'candidate',
+        lastMsg: locale === 'vi' ? 'Xác nhận lịch phỏng vấn ạ' : 'Interview confirmed'
+      });
+    }
+
+    return list;
+  }, [candidates, partners, messages, currentUser.role, locale]);
 
   useEffect(() => {
     // Default to select first contact if none active
     if (!activeContactName && contacts.length > 0) {
       onSelectContactName(contacts[0].name);
     }
-  }, [activeContactName, currentUser.role]);
+  }, [activeContactName, contacts, onSelectContactName]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -55,7 +122,7 @@ export default function ChatTab({ messages, currentUser, activeContactName, onSe
 
     const result = await sendChatMessage({
       sender: currentUser.role === 'candidate' ? 'candidate' : 'recruiter',
-      recipient: currentUser.role === 'candidate' ? 'recruiter' : 'candidate',
+      recipient: currentUser.role === 'candidate' ? 'recruiter' : (activeContactName || 'candidate'),
       message: text,
     });
 
@@ -98,6 +165,30 @@ export default function ChatTab({ messages, currentUser, activeContactName, onSe
           'Thank you for giving me the opportunity to interview with you today.',
         ]);
 
+  // Filter messages for current selected conversation
+  const filteredMessages = React.useMemo(() => {
+    if (currentUser.role === 'candidate') {
+      return messages;
+    }
+
+    if (!activeContactName) return [];
+
+    return messages.filter(msg => {
+      const isExchanged = 
+        (msg.sender === 'recruiter' && msg.recipient === activeContactName) ||
+        (msg.sender === activeContactName && msg.recipient === 'recruiter');
+
+      // Fallback for default seed messages
+      if (activeContactName === 'Nguyễn Văn A') {
+        return isExchanged || 
+          (msg.sender === 'recruiter' && msg.recipient === 'candidate') ||
+          (msg.sender === 'candidate' && msg.recipient === 'recruiter');
+      }
+
+      return isExchanged;
+    });
+  }, [messages, activeContactName, currentUser.role]);
+
   return (
     <div className="container">
       <div className="chat-layout">
@@ -135,8 +226,8 @@ export default function ChatTab({ messages, currentUser, activeContactName, onSe
 
             {/* Messages Feed */}
             <div className="chat-messages-container" ref={scrollRef}>
-              {messages.length > 0 ? (
-                messages.map((msg) => {
+              {filteredMessages.length > 0 ? (
+                filteredMessages.map((msg) => {
                   const isSentByMe =
                     (currentUser.role === 'candidate' && msg.sender === 'candidate') ||
                     (currentUser.role === 'employer' && msg.sender === 'recruiter');
