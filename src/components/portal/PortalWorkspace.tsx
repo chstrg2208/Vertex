@@ -655,24 +655,362 @@ export default function PortalWorkspace({
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: 'calc(100vh - 180px)', gap: '24px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', minHeight: 'calc(100vh - 180px)', gap: '24px' }}>
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes pulse-green {
+          0% { transform: scale(0.95); opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+          50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+          100% { transform: scale(0.95); opacity: 0.6; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulse-amber {
+          0% { transform: scale(0.95); opacity: 0.6; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+          50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+          100% { transform: scale(0.95); opacity: 0.6; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        @keyframes pulse-blue {
+          0% { transform: scale(0.95); opacity: 0.6; box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
+          50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 8px rgba(14, 165, 233, 0); }
+          100% { transform: scale(0.95); opacity: 0.6; box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+        @keyframes scanning {
+          0% { top: 0%; opacity: 0.1; }
+          50% { opacity: 0.7; }
+          100% { top: 100%; opacity: 0.1; }
+        }
+        .bento-card {
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
+          overflow: hidden;
+          position: relative;
+        }
+        .bento-card:hover {
+          transform: translateY(-4px);
+          box-shadow: var(--shadow-md), var(--shadow-glow);
+          border-color: var(--primary);
+        }
+        .bento-gradient-1 {
+          background: linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(14, 165, 233, 0.04) 100%);
+        }
+        .bento-gradient-2 {
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(14, 165, 233, 0.04) 100%);
+        }
+        .bento-gradient-3 {
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.04) 0%, rgba(239, 68, 68, 0.04) 100%);
+        }
+        .row-strip-hover {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .row-strip-hover:hover {
+          background-color: var(--surface-hover);
+          transform: translateX(4px);
+        }
+        .tag-match {
+          background: var(--success-bg);
+          color: var(--success);
+          border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+        .tag-missing {
+          background: rgba(239, 68, 68, 0.03);
+          color: var(--danger);
+          border: 1px solid rgba(239, 68, 68, 0.12);
+        }
+        .glass-column {
+          background: rgba(255, 255, 255, 0.02);
+          backdrop-filter: blur(8px);
+          border: 1px solid var(--border);
+        }
+        [data-theme="dark"] .glass-column {
+          background: rgba(16, 22, 38, 0.4);
+        }
+        .kanban-card {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .kanban-card:hover {
+          transform: translateY(-2px) scale(1.02);
+          border-color: var(--primary) !important;
+          box-shadow: var(--shadow-md);
+        }
+        .pulse-light-green {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--success);
+          display: inline-block;
+          animation: pulse-green 2s infinite;
+        }
+        .pulse-light-amber {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--warning);
+          display: inline-block;
+          animation: pulse-amber 2s infinite;
+        }
+        .pulse-light-blue {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--secondary);
+          display: inline-block;
+          animation: pulse-blue 2s infinite;
+        }
+
+        /* Portal custom sidebar nav tab styling (Aesthetic, no layout shifts) */
+        .portal-nav-tab {
+          width: 100% !important;
+          justify-content: flex-start !important;
+          margin: 0 !important;
+          padding: 10px 14px !important;
+          border-radius: 10px !important;
+          font-size: 13.5px !important;
+          font-weight: 600 !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          transition: all 0.2s ease !important;
+          border: 1px solid transparent !important;
+          background: transparent !important;
+          color: var(--text-secondary) !important;
+          cursor: pointer !important;
+        }
+        .portal-nav-tab:hover {
+          background: var(--surface-hover) !important;
+          color: var(--text-primary) !important;
+          border-color: var(--border) !important;
+        }
+        .portal-nav-tab.active {
+          background: rgba(99, 102, 241, 0.08) !important;
+          color: var(--primary) !important;
+          border-color: rgba(99, 102, 241, 0.2) !important;
+          font-weight: 700 !important;
+          box-shadow: 0 2px 4px rgba(99, 102, 241, 0.04) !important;
+        }
+
+        /* BA Portal theme overrides for Admin page */
+        .ba-title {
+          font-size: 22px !important;
+          font-weight: 700 !important;
+          color: var(--text-primary) !important;
+          letter-spacing: -0.02em !important;
+          margin: 0 !important;
+        }
+        .ba-subtitle {
+          font-size: 13px !important;
+          color: var(--text-secondary) !important;
+          margin: 4px 0 0 0 !important;
+        }
+        .ba-header-section {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          margin-bottom: 24px !important;
+        }
+        .ba-btn-primary {
+          background-color: var(--primary) !important;
+          color: #ffffff !important;
+          font-size: 12.5px !important;
+          font-weight: 600 !important;
+          padding: 8px 16px !important;
+          border-radius: 10px !important;
+          border: none !important;
+          cursor: pointer !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          box-shadow: 0 1px 2px 0 rgba(79, 70, 229, 0.1) !important;
+          transition: all 0.15s !important;
+        }
+        .ba-btn-primary:hover {
+          background-color: var(--primary-hover) !important;
+          transform: translateY(-0.5px);
+        }
+        .ba-btn-primary:active {
+          transform: translateY(0);
+        }
+        .ba-btn-secondary {
+          background-color: var(--surface) !important;
+          color: var(--text-secondary) !important;
+          border: 1px solid var(--border) !important;
+          font-size: 12.5px !important;
+          font-weight: 600 !important;
+          padding: 8px 16px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+          transition: all 0.15s !important;
+        }
+        .ba-btn-secondary:hover {
+          background-color: var(--surface-hover) !important;
+          border-color: var(--text-muted) !important;
+        }
+        .ba-form-group {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 6px !important;
+        }
+        .ba-form-label {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          color: var(--text-secondary) !important;
+          letter-spacing: 0.05em !important;
+        }
+        .ba-input {
+          width: 100% !important;
+          background-color: var(--background) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 10px !important;
+          padding: 8px 12px !important;
+          font-size: 13.5px !important;
+          color: var(--text-primary) !important;
+          transition: all 0.15s !important;
+        }
+        .ba-input:focus {
+          outline: none !important;
+          border-color: var(--primary) !important;
+          background-color: var(--surface) !important;
+          box-shadow: 0 0 0 3px var(--primary-light) !important;
+        }
+        .ba-table-container {
+          background-color: var(--surface) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 16px !important;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+          overflow: hidden !important;
+        }
+        .ba-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          text-align: left !important;
+        }
+        .ba-table th {
+          background-color: var(--surface-hover) !important;
+          border-bottom: 1px solid var(--border) !important;
+          padding: 14px 20px !important;
+          font-size: 11.5px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
+          color: var(--text-secondary) !important;
+        }
+        .ba-table td {
+          padding: 14px 20px !important;
+          border-bottom: 1px solid var(--border) !important;
+          font-size: 13.5px !important;
+          color: var(--text-primary) !important;
+        }
+        .ba-table tr:last-child td {
+          border-bottom: none !important;
+        }
+        .ba-table tr:hover td {
+          background-color: var(--surface-hover) !important;
+        }
+        .ba-badge {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 4px !important;
+          font-size: 11px !important;
+          font-weight: 700 !important;
+          padding: 3px 8px !important;
+          border-radius: 9999px !important;
+          line-height: 1.2 !important;
+        }
+        .ba-badge-success {
+          background-color: var(--success-bg) !important;
+          color: var(--success) !important;
+        }
+        .ba-badge-warning {
+          background-color: var(--warning-bg) !important;
+          color: var(--warning) !important;
+        }
+        .ba-badge-info {
+          background-color: var(--primary-light) !important;
+          color: var(--primary) !important;
+        }
+        .ba-badge-danger {
+          background-color: var(--danger-bg) !important;
+          color: var(--danger) !important;
+        }
+      `}} />
+
       {/* Sidebar Navigation */}
-      <aside className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', height: 'fit-content' }}>
-        <h4 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0 12px 8px 12px', borderBottom: '1px solid var(--border)' }}>
-          {isTA ? pt.sidebarHeaderTA : pt.sidebarHeaderBA}
+      <aside className="card" style={{ 
+        padding: '16px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '8px', 
+        height: 'fit-content'
+      }}>
+        <h4 style={{ 
+          fontSize: '12px', 
+          color: 'var(--text-muted)', 
+          textTransform: 'uppercase', 
+          padding: '0 12px 8px 12px', 
+          borderBottom: '1px solid var(--border)',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          marginBottom: '0px'
+        }}>
+          {currentUser.role === 'admin' ? (locale === 'vi' ? 'Hệ thống Admin Quản trị' : 'Admin System Manager') : isTA ? pt.sidebarHeaderTA : pt.sidebarHeaderBA}
         </h4>
-        {sidebarTabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`nav-tab ${activeSubTab === tab.id ? 'active' : ''}`}
-            style={{ width: '100%', justifyContent: 'flex-start', margin: 0 }}
-            onClick={() => setActiveSubTab(tab.id as any)}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+          {sidebarTabs.map((tab) => {
+            const isActive = activeSubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                className={`portal-nav-tab ${isActive ? 'active' : ''}`}
+                onClick={() => setActiveSubTab(tab.id as any)}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* User Profile Card in Sidebar */}
+        <div style={{ 
+          marginTop: '24px', 
+          paddingTop: '16px', 
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%', 
+              background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              fontSize: '14px'
+            }}>
+              {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {currentUser.name}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                {currentUser.role === 'admin' ? 'Administrator' : currentUser.role === 'ta' ? 'TA Staff' : 'BA Manager'}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--success)' }}>
+            <span className="pulse-light-green"></span>
+            <span>{locale === 'vi' ? 'Đã kết nối hệ thống' : 'Online'}</span>
+          </div>
+        </div>
       </aside>
 
       {/* Main Workspace Frame */}
@@ -683,28 +1021,124 @@ export default function PortalWorkspace({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
             {isTA ? (
-              /* TA Staff Overview */
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                <div className="card" style={{ padding: '20px' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{pt.statTotalDevs}</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px' }}>{candidates.length + 15}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--success)', marginTop: '4px' }}>{pt.statNewDevsMonth}</div>
+              /* TA Staff Overview - Premium Bento Grid */
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                
+                {/* Card 1: Total Devs (Large Asymmetric Card) */}
+                <div className="bento-card bento-gradient-1" style={{ gridColumn: 'span 2', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', justifySelf: 'stretch', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={16} style={{ color: 'var(--primary)' }} />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                        {pt.statTotalDevs}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginTop: '4px' }}>
+                      <span style={{ fontSize: '42px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+                        {candidates.length + 15}
+                      </span>
+                      <span className="badge" style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', fontSize: '11.5px', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <ArrowUpRight size={12} />
+                        {pt.statNewDevsMonth}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '300px' }}>
+                      {locale === 'vi' ? 'Hệ thống vừa đồng bộ thêm hồ sơ ứng viên từ các kênh đối tác tuyển dụng liên kết.' : 'Synchronized new applicant CV profiles from partner agency networks.'}
+                    </p>
+                  </div>
+                  
+                  {/* Visual Growth Sparkline SVG */}
+                  <div style={{ width: '140px', height: '80px', opacity: 0.85, marginRight: '10px' }}>
+                    <svg viewBox="0 0 100 40" width="100%" height="100%">
+                      <defs>
+                        <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M 0 35 Q 20 20 40 30 T 80 10 T 100 5 L 100 40 L 0 40 Z" fill="url(#sparkline-grad)" />
+                      <path d="M 0 35 Q 20 20 40 30 T 80 10 T 100 5" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" />
+                      <circle cx="100" cy="5" r="3.5" fill="var(--secondary)" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="card" style={{ padding: '20px' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{pt.statActiveVetted}</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px' }}>{candidates.filter(c => c.id % 2 === 0).length + 3}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--secondary)', marginTop: '4px' }}>{pt.statReadyDevsSub}</div>
+
+                {/* Card 2: Available Engineers */}
+                <div className="bento-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <UserCheck size={16} style={{ color: 'var(--success)' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      {pt.statActiveVetted}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ fontSize: '42px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-heading)' }}>
+                      {candidates.filter(c => c.id % 2 === 0).length + 3}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', marginTop: 'auto' }}>
+                    <span className="pulse-light-green"></span>
+                    <span>{pt.statReadyDevsSub}</span>
+                  </div>
                 </div>
-                <div className="card" style={{ padding: '20px' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{pt.statActiveApps}</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px' }}>{applications.length}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px' }}>{applications.length} {pt.statActiveAppsSub}</div>
+
+                {/* Card 3: Placements (Engineers Hired) */}
+                <div className="bento-card bento-gradient-2" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Briefcase size={16} style={{ color: 'var(--secondary)' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      {pt.statActiveApps}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {applications.length}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'auto' }}>
+                    {applications.length} {pt.statActiveAppsSub}
+                  </div>
                 </div>
-                <div className="card" style={{ padding: '20px' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{pt.statTotalPartners}</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '8px' }}>4 {locale === 'vi' ? 'đối tác' : 'partners'}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--success)', marginTop: '4px' }}>{pt.statTotalPartnersSub}</div>
+
+                {/* Card 4: Partner networks */}
+                <div className="bento-card bento-gradient-3" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Layers size={16} style={{ color: 'var(--warning)' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      {pt.statTotalPartners}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      4
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'auto' }}>
+                    {pt.statTotalPartnersSub}
+                  </div>
                 </div>
+
+                {/* Card 5: Vetting Rate Progress */}
+                <div className="bento-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Award size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      {locale === 'vi' ? 'Tỉ Lệ Đạt Vetting' : 'Vetting Approval Rate'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                    <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      76.8%
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ height: '6px', width: '100%', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: '76.8%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))', borderRadius: '3px' }}></div>
+                    </div>
+                    <span>{locale === 'vi' ? 'Chuẩn hóa chuyên môn hàng đầu' : 'Top specialized standards'}</span>
+                  </div>
+                </div>
+
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -827,45 +1261,135 @@ export default function PortalWorkspace({
             )}
 
             {/* Funnels & Feeds */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-              <div className="card" style={{ padding: '20px' }}>
-                <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '10px' }}>
+              {/* Left Column: Recent Assignment Activity */}
+              <div className="card" style={{ padding: '24px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                  <Layers size={16} style={{ color: 'var(--primary)' }} />
                   {isTA ? pt.assignmentActivity : pt.recentRequestsActivity}
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {applications.map((app) => (
-                    <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--background)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                      <div>
-                        <strong>{app.candidate.name}</strong> {locale === 'vi' ? 'được phái cử cho' : 'assigned to'} <strong>{app.job.title}</strong>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{pt.clientLabel} {app.job.company}</div>
-                      </div>
-                      <span className="badge" style={{
-                        backgroundColor: app.status === 'HIRED' ? 'var(--success-bg)' : 'var(--primary-light)',
-                        color: app.status === 'HIRED' ? 'var(--success)' : 'var(--primary)',
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {applications.map((app) => {
+                    const initials = app.candidate.name ? app.candidate.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'IT';
+                    return (
+                      <div key={app.id} className="row-strip-hover" style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '12px 16px', 
+                        background: 'var(--surface-hover)', 
+                        borderRadius: 'var(--radius-md)', 
+                        border: '1px solid var(--border)',
+                        transition: 'all var(--transition-fast)'
                       }}>
-                        {app.status === 'HIRED' ? pt.hiredStatus : pt.appliedStatus}
-                      </span>
-                    </div>
-                  ))}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'var(--primary-light)',
+                            color: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            fontSize: '11px',
+                            flexShrink: 0
+                          }}>
+                            {initials}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {app.candidate.name}
+                            </div>
+                            <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {locale === 'vi' ? 'Phái cử cho ' : 'Assigned to '} 
+                              <strong style={{ color: 'var(--primary)' }}>{app.job.title}</strong> 
+                              <span style={{ color: 'var(--text-muted)' }}> • {app.job.company}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="badge" style={{
+                          backgroundColor: app.status === 'HIRED' ? 'var(--success-bg)' : 'var(--primary-light)',
+                          color: app.status === 'HIRED' ? 'var(--success)' : 'var(--primary)',
+                          borderRadius: '12px',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: 700
+                        }}>
+                          {app.status === 'HIRED' ? pt.hiredStatus : pt.appliedStatus}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Recruitment Funnel stats */}
-              <div className="card" style={{ padding: '20px' }}>
-                <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>{pt.featuredTalents}</h3>
+              {/* Right Column: Recruitment Funnel / Featured Talents */}
+              <div className="card" style={{ padding: '24px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                  <Award size={16} style={{ color: 'var(--warning)' }} />
+                  {pt.featuredTalents}
+                </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ padding: '10px', background: 'var(--background)', borderRadius: '6px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>Backend Spring Boot</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>3 {pt.featuredTalentsSub}</div>
+                  
+                  {/* Item 1 */}
+                  <div className="bento-card" style={{ 
+                    padding: '14px 16px', 
+                    background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, rgba(14, 165, 233, 0.03) 100%)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: 'var(--radius-md)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>Backend Spring Boot</div>
+                      <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '10px', fontWeight: 700 }}>
+                        Active
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="pulse-light-green"></span>
+                      <span>3 {pt.featuredTalentsSub}</span>
+                    </div>
                   </div>
-                  <div style={{ padding: '10px', background: 'var(--background)', borderRadius: '6px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>React/NextJS Frontend</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>5 {pt.featuredTalentsSub2}</div>
+
+                  {/* Item 2 */}
+                  <div className="bento-card" style={{ 
+                    padding: '14px 16px', 
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(14, 165, 233, 0.03) 100%)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: 'var(--radius-md)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>React/NextJS Frontend</div>
+                      <span className="badge" style={{ backgroundColor: 'var(--secondary-light)', color: 'var(--secondary)', fontSize: '10px', fontWeight: 700 }}>
+                        In Demand
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="pulse-light-blue"></span>
+                      <span>5 {pt.featuredTalentsSub2}</span>
+                    </div>
                   </div>
-                  <div style={{ padding: '10px', background: 'var(--background)', borderRadius: '6px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>DevOps Cloud AWS</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>2 {pt.featuredTalentsSub3}</div>
+
+                  {/* Item 3 */}
+                  <div className="bento-card" style={{ 
+                    padding: '14px 16px', 
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(239, 68, 68, 0.03) 100%)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: 'var(--radius-md)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>DevOps Cloud AWS</div>
+                      <span className="badge" style={{ backgroundColor: 'var(--warning-bg)', color: 'var(--warning)', fontSize: '10px', fontWeight: 700 }}>
+                        Hot
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="pulse-light-amber"></span>
+                      <span>2 {pt.featuredTalentsSub3}</span>
+                    </div>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -874,13 +1398,21 @@ export default function PortalWorkspace({
 
         {/* SUB-TAB 2: TALENTS LIST */}
         {activeSubTab === 'talents' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="ba-tab-view ba-animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="ba-header-section">
+              <div>
+                <h1 className="ba-title">{locale === 'vi' ? 'Kho Hồ sơ Lập trình viên' : 'Developer Talent Repository'}</h1>
+                <p className="ba-subtitle">{locale === 'vi' ? 'Quản lý thông tin kỹ năng, trình độ và theo dõi trạng thái dự án của các kỹ sư.' : 'Manage capabilities, English levels, and deployment status of engineers.'}</p>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '12px' }}>
-              <div className="search-input-wrapper" style={{ flex: 1 }}>
-                <Search size={18} className="search-icon" />
+              <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={16} style={{ position: 'absolute', left: '14px', color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  className="search-input"
+                  className="ba-input"
+                  style={{ paddingLeft: '38px', fontSize: '13.5px', height: '42px' }}
                   placeholder={pt.searchPlh}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -888,65 +1420,73 @@ export default function PortalWorkspace({
               </div>
             </div>
 
-            {/* Talents Table Grid */}
-            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+            {/* Talents Card Table Grid */}
+            <div className="ba-table-container">
+              <div className="ba-table-header">
+                <h3 className="ba-table-header-title">{locale === 'vi' ? 'Danh sách kỹ sư' : 'Engineers Directory'}</h3>
+              </div>
+              <table className="ba-table">
                 <thead>
-                  <tr style={{ background: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '14px 16px' }}>{pt.colName}</th>
-                    <th style={{ padding: '14px 16px' }}>{pt.colRole}</th>
-                    <th style={{ padding: '14px 16px' }}>{pt.colSkills}</th>
-                    <th style={{ padding: '14px 16px' }}>{locale === 'vi' ? 'Đánh giá / TA' : 'Rating / English'}</th>
-                    <th style={{ padding: '14px 16px' }}>{locale === 'vi' ? 'Trạng thái' : 'Status'}</th>
-                    <th style={{ padding: '14px 16px' }}>{pt.colActions}</th>
+                  <tr>
+                    <th>{pt.colName}</th>
+                    <th>{pt.colRole}</th>
+                    <th>{pt.colSkills}</th>
+                    <th>{locale === 'vi' ? 'Đánh giá / TA' : 'Rating / English'}</th>
+                    <th>{locale === 'vi' ? 'Trạng thái' : 'Status'}</th>
+                    <th style={{ textAlign: 'right' }}>{pt.colActions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {candidates
                     .filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.skills.join(',').toLowerCase().includes(searchTerm.toLowerCase()))
                     .map((c) => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="table-row-hover">
-                        <td style={{ padding: '14px 16px', fontWeight: 'bold' }}>{c.name}</td>
-                        <td style={{ padding: '14px 16px', color: 'var(--primary)', fontWeight: 600 }}>{c.title}</td>
-                        <td style={{ padding: '14px 16px' }}>
+                      <tr key={c.id}>
+                        <td style={{ fontWeight: 'bold' }}>{c.name}</td>
+                        <td style={{ color: 'var(--primary)', fontWeight: 600 }}>{c.title}</td>
+                        <td>
                           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {c.skills.slice(0, 3).map((s, idx) => (
-                              <span key={idx} className="cv-skill-badge" style={{ fontSize: '10px' }}>{s}</span>
+                              <span key={idx} className="ba-badge ba-badge-info" style={{ fontSize: '10px', textTransform: 'none', letterSpacing: 'normal' }}>
+                                {s}
+                              </span>
                             ))}
-                            {c.skills.length > 3 && <span style={{ fontSize: '9px', opacity: 0.7 }}>+{c.skills.length - 3}</span>}
+                            {c.skills.length > 3 && <span style={{ fontSize: '10px', color: 'var(--text-muted)', alignSelf: 'center', marginLeft: '2px' }}>+{c.skills.length - 3}</span>}
                           </div>
                         </td>
-                        <td style={{ padding: '14px 16px' }}>
+                        <td>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffb100', fontWeight: 'bold' }}>
-                              <Star size={12} fill="#ffb100" />
+                              <Star size={12} fill="#ffb100" style={{ color: '#ffb100' }} />
                               <span>{c.rating !== undefined ? Number(c.rating).toFixed(1) : '5.0'}</span>
                             </div>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{c.englishLevel || 'Intermediate'}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{c.englishLevel || 'Intermediate'}</span>
                           </div>
                         </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <span className="badge" style={{
-                            backgroundColor: c.status === 'AVAILABLE' ? 'var(--success-bg)' : c.status === 'PLACED' ? 'var(--primary-light)' : 'var(--danger-bg)',
-                            color: c.status === 'AVAILABLE' ? 'var(--success)' : c.status === 'PLACED' ? 'var(--primary)' : 'var(--danger)'
-                          }}>
+                        <td>
+                          <span className={`ba-badge ${
+                            c.status === 'AVAILABLE' 
+                              ? 'ba-badge-success' 
+                              : c.status === 'PLACED' 
+                              ? 'ba-badge-info' 
+                              : 'ba-badge-warning'
+                          }`}>
                             {c.status === 'AVAILABLE' ? (locale === 'vi' ? 'Trống dự án' : 'Available') : c.status === 'PLACED' ? (locale === 'vi' ? 'Đã phái cử' : 'Placed') : (locale === 'vi' ? 'Đang thẩm định' : 'Vetting')}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                             <button
                               type="button"
-                              className="nav-tab"
-                              style={{ padding: '4px 8px', fontSize: '11px', margin: 0, border: '1px solid var(--border)', background: 'var(--surface)' }}
+                              className="ba-btn-secondary"
+                              style={{ height: '32px', padding: '0 12px', fontSize: '12px' }}
                               onClick={() => handleOpenCVModal(c)}
                             >
                               {pt.btnViewCV}
                             </button>
                             <button
                               type="button"
-                              className="apply-btn"
-                              style={{ padding: '4px 8px', fontSize: '11px', flex: 'none' }}
+                              className="ba-btn-primary"
+                              style={{ height: '32px', padding: '0 12px', fontSize: '12px' }}
                               onClick={() => onOpenChat(c.name)}
                             >
                               {pt.btnChat}
@@ -958,26 +1498,30 @@ export default function PortalWorkspace({
                 </tbody>
               </table>
             </div>
-
-            {/* Custom table css */}
-            <style dangerouslySetInnerHTML={{__html: `
-              .table-row-hover:hover {
-                background-color: var(--surface-hover);
-              }
-            `}} />
           </div>
         )}
 
         {/* SUB-TAB 3: ADD TALENT & AI CV PARSER */}
         {activeSubTab === 'add-talent' && (
-          <div style={{ display: 'grid', gridTemplateColumns: parsedData ? '1fr 1fr' : '1fr', gap: '24px' }}>
+          <div className="ba-tab-view ba-animate-fade-in" style={{ display: 'grid', gridTemplateColumns: parsedData ? '1.1fr 1.2fr' : '1fr', gap: '24px' }}>
             
             {/* Left box: Upload CV file */}
-            <div className="card" style={{ padding: '32px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifySelf: 'stretch', gap: '20px' }}>
-              <div style={{ border: '2px dashed var(--border)', padding: '40px 20px', borderRadius: '12px', background: 'rgba(79, 70, 229, 0.02)' }}>
-                <CloudUpload size={48} style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-                <h4>{pt.uploadTitle}</h4>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', marginBottom: '24px' }}>
+            <div className="ba-table-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifySelf: 'stretch', gap: '20px' }}>
+              <div className="ba-table-header" style={{ margin: '-24px -24px 0 -24px', padding: '16px 20px' }}>
+                <h3 className="ba-table-header-title">📤 {locale === 'vi' ? 'Tải CV lên hệ thống' : 'Upload CV Document'}</h3>
+              </div>
+              
+              <div style={{ 
+                border: '2px dashed var(--border)', 
+                padding: '44px 20px', 
+                borderRadius: 'var(--radius-md)', 
+                background: 'rgba(79, 70, 229, 0.01)',
+                textAlign: 'center',
+                transition: 'all var(--transition-normal)'
+              }}>
+                <CloudUpload size={44} style={{ color: 'var(--primary)', marginBottom: '14px' }} />
+                <h4 style={{ fontSize: '15px', fontWeight: 800 }}>{pt.uploadTitle}</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', marginBottom: '24px', lineHeight: 1.4, maxWidth: '340px', marginLeft: 'auto', marginRight: 'auto' }}>
                   {pt.uploadSub}
                 </p>
 
@@ -991,14 +1535,22 @@ export default function PortalWorkspace({
                   />
                   <label
                     htmlFor="cv-file-upload"
-                    className="apply-btn"
-                    style={{ padding: '10px 20px', fontSize: '13.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    className="ba-btn-primary"
+                    style={{ 
+                      padding: '10px 22px', 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      fontWeight: 700
+                    }}
                   >
                     {pt.btnUpload}
                   </label>
 
                   {isFileUploaded && (
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success)' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                      <span className="pulse-light-green"></span>
                       {pt.fileReceived} {fileName}
                     </div>
                   )}
@@ -1009,19 +1561,18 @@ export default function PortalWorkspace({
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                 <button
                   type="button"
-                  className="apply-btn"
-                  style={{ background: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  className="ba-btn-primary"
+                  style={{ background: 'var(--success)', borderColor: 'var(--success)' }}
                   onClick={triggerParsingSequence}
                   disabled={!isFileUploaded || isParsing}
                 >
-                  <Play size={16} />
+                  <Play size={15} />
                   {isParsing ? pt.btnExtracting : pt.btnExtract}
                 </button>
                 
                 <button
                   type="button"
-                  className="btn-secondary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border)' }}
+                  className="ba-btn-secondary"
                   onClick={runDemoParser}
                   disabled={isParsing}
                 >
@@ -1029,84 +1580,114 @@ export default function PortalWorkspace({
                 </button>
               </div>
 
-              {/* Parser Output Logs (Terminal style) */}
-              {isParsing || parseSteps.length > 0 ? (
+              {/* Parser Output Logs (Holographic AI terminal) */}
+              {(isParsing || parseSteps.length > 0) && (
                 <div style={{
-                  background: '#0d1117',
-                  color: '#39d353',
+                  background: '#070a13',
+                  color: '#38bdf8',
                   fontFamily: 'monospace',
                   padding: '16px',
-                  borderRadius: '8px',
+                  borderRadius: 'var(--radius-md)',
                   textAlign: 'left',
-                  fontSize: '11.5px',
-                  lineHeight: '1.5',
-                  maxHeight: '220px',
-                  overflowY: 'auto'
+                  fontSize: '12px',
+                  lineHeight: '1.6',
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  border: '1px solid #1e293b',
+                  boxShadow: 'inset 0 0 12px rgba(56, 189, 248, 0.08)',
+                  position: 'relative'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #21262d', paddingBottom: '6px', marginBottom: '8px', color: '#8b949e' }}>
-                    <Terminal size={14} />
-                    <span>{pt.terminalTitle}</span>
+                  {/* Flashing scanner line overlay */}
+                  {isParsing && (
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      width: '100%',
+                      height: '2px',
+                      background: 'rgba(56, 189, 248, 0.4)',
+                      boxShadow: '0 0 10px rgba(56, 189, 248, 0.8)',
+                      animation: 'scanning 2s infinite linear'
+                    }} />
+                  )}
+                  
+                  {/* Terminal Header dots */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e293b', paddingBottom: '8px', marginBottom: '12px', color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f56', display: 'inline-block' }}></span>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e', display: 'inline-block' }}></span>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#27c93f', display: 'inline-block' }}></span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em' }}>{pt.terminalTitle}</span>
                   </div>
+                  
                   {parseSteps.map((step, idx) => (
-                    <div key={idx} style={{ marginBottom: '4px' }}>
-                      {step}
+                    <div key={idx} style={{ marginBottom: '4px', display: 'flex', gap: '8px' }}>
+                      <span style={{ color: '#64748b' }}>&gt;</span>
+                      <span style={{ color: step.includes('✓') || step.includes('✨') ? 'var(--success)' : '#e2e8f0' }}>{step}</span>
                     </div>
                   ))}
                   {isParsing && (
-                    <div className="animate-pulse" style={{ animation: 'pulse 1s infinite' }}>{pt.terminalRunning}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--secondary)' }}>
+                      <span>&gt;</span>
+                      <span className="animate-pulse" style={{ animation: 'pulse 1s infinite' }}>{pt.terminalRunning}</span>
+                    </div>
                   )}
                 </div>
-              ) : null}
+              )}
             </div>
 
             {/* Right box: Extracted Fields (Forms) */}
             {parsedData && (
-              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', animation: 'slideLeft 0.3s ease' }}>
-                <h3 style={{ fontSize: '16px', color: 'var(--success)' }}>{pt.extractedTitle}</h3>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+              <div className="ba-table-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.25s ease' }}>
+                <div className="ba-table-header" style={{ margin: '-24px -24px 0 -24px', padding: '16px 20px' }}>
+                  <h3 className="ba-table-header-title">✓ {pt.extractedTitle}</h3>
+                </div>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '8px' }}>
                   {pt.extractedSub}
                 </p>
 
-                <div className="form-group">
-                  <label>{pt.fieldFullName}</label>
-                  <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} />
-                </div>
-
-                <div className="form-group">
-                  <label>{pt.fieldDesiredRole}</label>
-                  <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>{pt.fieldEmail}</label>
-                    <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '55vh', overflowY: 'auto', paddingRight: '4px' }}>
+                  <div className="ba-form-group">
+                    <label className="ba-form-label">{pt.fieldFullName}</label>
+                    <input type="text" className="ba-input" value={newName} onChange={(e) => setNewName(e.target.value)} />
                   </div>
-                  <div className="form-group">
-                    <label>{pt.fieldPhone}</label>
-                    <input type="text" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+
+                  <div className="ba-form-group">
+                    <label className="ba-form-label">{pt.fieldDesiredRole}</label>
+                    <input type="text" className="ba-input" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
                   </div>
-                </div>
 
-                <div className="form-group">
-                  <label>{pt.fieldLocation}</label>
-                  <input type="text" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} />
-                </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="ba-form-group">
+                      <label className="ba-form-label">{pt.fieldEmail}</label>
+                      <input type="email" className="ba-input" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                    </div>
+                    <div className="ba-form-group">
+                      <label className="ba-form-label">{pt.fieldPhone}</label>
+                      <input type="text" className="ba-input" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                    </div>
+                  </div>
 
-                <div className="form-group">
-                  <label>{pt.fieldSkills}</label>
-                  <input type="text" value={newSkills} onChange={(e) => setNewSkills(e.target.value)} />
-                </div>
+                  <div className="ba-form-group">
+                    <label className="ba-form-label">{pt.fieldLocation}</label>
+                    <input type="text" className="ba-input" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} />
+                  </div>
 
-                <div className="form-group">
-                  <label>{pt.fieldSummary}</label>
-                  <textarea rows={3} value={newSummary} onChange={(e) => setNewSummary(e.target.value)} />
+                  <div className="ba-form-group">
+                    <label className="ba-form-label">{pt.fieldSkills}</label>
+                    <input type="text" className="ba-input" value={newSkills} onChange={(e) => setNewSkills(e.target.value)} />
+                  </div>
+
+                  <div className="ba-form-group">
+                    <label className="ba-form-label">{pt.fieldSummary}</label>
+                    <textarea rows={3} className="ba-input" style={{ resize: 'vertical' }} value={newSummary} onChange={(e) => setNewSummary(e.target.value)} />
+                  </div>
                 </div>
 
                 <button
                   type="button"
-                  className="apply-btn"
-                  style={{ background: 'var(--success)', width: '100%', padding: '12px' }}
+                  className="ba-btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }}
                   onClick={handleSaveParsedCandidate}
                 >
                   {pt.btnSaveCandidate}
@@ -1120,9 +1701,10 @@ export default function PortalWorkspace({
         {activeSubTab === 'pipeline' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Header Switcher */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--glass-bg)', backdropFilter: 'blur(var(--glass-blur))', border: '1px solid var(--glass-border)', padding: '20px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)' }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {pipelineMode === 'kanban' ? '📊' : '⚡'}
                   {pipelineMode === 'kanban' 
                     ? (locale === 'vi' ? 'Quy trình Tuyển dụng (Kanban)' : 'Recruitment Pipeline (Kanban)') 
                     : (locale === 'vi' ? 'Bộ gợi ý Khớp nối AI' : 'AI Matchmaker Engine')}
@@ -1134,47 +1716,49 @@ export default function PortalWorkspace({
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', background: 'var(--background)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: '4px', background: 'var(--background)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                 <button
                   type="button"
                   style={{
                     padding: '8px 16px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
                     border: 'none',
                     borderRadius: '6px',
                     cursor: 'pointer',
                     background: pipelineMode === 'kanban' ? 'var(--primary)' : 'transparent',
                     color: pipelineMode === 'kanban' ? '#fff' : 'var(--text-secondary)',
-                    transition: 'all 0.2s'
+                    transition: 'all var(--transition-fast)',
+                    boxShadow: pipelineMode === 'kanban' ? 'var(--shadow-sm)' : 'none'
                   }}
                   onClick={() => setPipelineMode('kanban')}
                 >
-                  📊 Kanban Board
+                  Kanban Board
                 </button>
                 <button
                   type="button"
                   style={{
                     padding: '8px 16px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
                     border: 'none',
                     borderRadius: '6px',
                     cursor: 'pointer',
                     background: pipelineMode === 'matcher' ? 'var(--primary)' : 'transparent',
                     color: pipelineMode === 'matcher' ? '#fff' : 'var(--text-secondary)',
-                    transition: 'all 0.2s'
+                    transition: 'all var(--transition-fast)',
+                    boxShadow: pipelineMode === 'matcher' ? 'var(--shadow-sm)' : 'none'
                   }}
                   onClick={() => setPipelineMode('matcher')}
                 >
-                  ⚡ AI Matcher
+                  AI Matcher
                 </button>
               </div>
             </div>
 
             {/* Mode 1: KANBAN BOARD */}
             {pipelineMode === 'kanban' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', overflowX: 'auto', paddingBottom: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '14px', overflowX: 'auto', paddingBottom: '16px', marginTop: '4px' }}>
                 {(['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'HIRED', 'REJECTED'] as const).map((stage) => {
                   const stageApps = applications.filter((app) => app.status === stage);
                   
@@ -1195,7 +1779,7 @@ export default function PortalWorkspace({
                       case 'APPLIED': return 'var(--text-muted)';
                       case 'SCREENING': return 'var(--secondary)';
                       case 'INTERVIEW': return 'var(--primary)';
-                      case 'OFFERED': return '#e3a300';
+                      case 'OFFERED': return 'var(--warning)';
                       case 'HIRED': return 'var(--success)';
                       case 'REJECTED': return 'var(--danger)';
                       default: return 'gray';
@@ -1205,58 +1789,64 @@ export default function PortalWorkspace({
                   return (
                     <div
                       key={stage}
+                      className="glass-column"
                       style={{
-                        background: 'var(--surface)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border)',
-                        padding: '12px',
-                        minHeight: '450px',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '14px',
+                        minHeight: '520px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '12px',
-                        minWidth: '160px'
+                        minWidth: '180px',
+                        boxShadow: 'var(--shadow-sm)',
+                        borderTop: `4px solid ${getStageColor(stage)}`
                       }}
                     >
                       {/* Column Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid ' + getStageColor(stage), paddingBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '12.5px', color: getStageColor(stage) }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontWeight: 800, fontSize: '13px', color: getStageColor(stage), letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                           {getStageTitle(stage)}
                         </span>
-                        <span style={{ fontSize: '11px', background: 'var(--background)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '10px', fontWeight: 800 }}>
                           {stageApps.length}
                         </span>
                       </div>
 
                       {/* App cards list */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
                         {stageApps.map((app) => (
                           <div
                             key={app.id}
                             style={{
-                              background: 'var(--background)',
+                              background: 'var(--surface)',
                               border: '1px solid var(--border)',
-                              borderRadius: '8px',
-                              padding: '10px',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '12px',
                               cursor: 'pointer',
                               position: 'relative',
-                              transition: 'transform 0.2s, box-shadow 0.2s',
+                              boxShadow: 'var(--shadow-sm)'
                             }}
-                            className="kanban-card-hover"
+                            className="kanban-card"
                             onClick={() => handleOpenCVModal(app.candidate as any)}
                           >
-                            <div style={{ fontWeight: 'bold', fontSize: '12.5px', color: 'var(--text-main)' }}>{app.candidate.name}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '2px', fontWeight: 600 }}>{app.candidate.title}</div>
-                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '6px', borderTop: '1px solid var(--border)', paddingTop: '6px' }}>
-                              💼 {app.job.title} ({app.job.company})
+                            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                              {app.candidate.name}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700 }}>
+                              {app.candidate.title}
+                            </div>
+                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span>🏢 {app.job.company}</span>
+                              <span style={{ fontWeight: 600 }}>💼 {app.job.title}</span>
                             </div>
 
                             {/* Quick Transitions */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '10px' }} onClick={(e) => e.stopPropagation()}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '12px' }} onClick={(e) => e.stopPropagation()}>
                               {stage !== 'APPLIED' && (
                                 <button
                                   type="button"
                                   title="Move left"
-                                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}
+                                  style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '9px', fontWeight: 'bold' }}
                                   onClick={async () => {
                                     const stages = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'HIRED', 'REJECTED'];
                                     const prevStage = stages[stages.indexOf(stage) - 1];
@@ -1271,7 +1861,7 @@ export default function PortalWorkspace({
                                 <button
                                   type="button"
                                   title="Move right"
-                                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}
+                                  style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '9px', fontWeight: 'bold' }}
                                   onClick={async () => {
                                     const stages = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'HIRED', 'REJECTED'];
                                     const nextStage = stages[stages.indexOf(stage) + 1];
@@ -1286,8 +1876,8 @@ export default function PortalWorkspace({
                           </div>
                         ))}
                         {stageApps.length === 0 && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-                            {locale === 'vi' ? 'Trống' : 'Empty'}
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)', background: 'rgba(0,0,0,0.01)' }}>
+                            {locale === 'vi' ? 'Trống' : 'Empty Column'}
                           </div>
                         )}
                       </div>
@@ -1300,22 +1890,27 @@ export default function PortalWorkspace({
             {/* Mode 2: AI MATCHMAKER */}
             {pipelineMode === 'matcher' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div className="card" style={{ padding: '20px' }}>
-                  <label style={{ fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '8px' }}>
+                <div className="card" style={{ padding: '24px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(var(--glass-blur))', borderRadius: 'var(--radius-lg)' }}>
+                  <label style={{ fontWeight: 800, fontSize: '13px', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>
                     {locale === 'vi' ? '1. Chọn Yêu cầu tuyển dụng để khớp nối:' : '1. Select Job Request to Match:'}
                   </label>
-                  <select
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none' }}
-                    value={selectedJobId || ''}
-                    onChange={(e) => setSelectedJobId(Number(e.target.value) || null)}
-                  >
-                    <option value="">-- {locale === 'vi' ? 'Chọn vị trí trống' : 'Select an open role'} --</option>
-                    {jobs.map((j) => (
-                      <option key={j.id} value={j.id}>
-                        {j.title} ({j.company}) - Tag: [{j.tags.join(', ')}]
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none', appearance: 'none', cursor: 'pointer', fontWeight: 600 }}
+                      value={selectedJobId || ''}
+                      onChange={(e) => setSelectedJobId(Number(e.target.value) || null)}
+                    >
+                      <option value="">-- {locale === 'vi' ? 'Chọn vị trí trống' : 'Select an open role'} --</option>
+                      {jobs.map((j) => (
+                        <option key={j.id} value={j.id}>
+                          {j.title} ({j.company}) - Tags: [{j.tags.join(', ')}]
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }}>
+                      ▼
+                    </div>
+                  </div>
                 </div>
 
                 {selectedJobId && (() => {
@@ -1328,7 +1923,7 @@ export default function PortalWorkspace({
                     const matchedSkills = candidate.skills.filter((s) => jobTagsLower.includes(s.toLowerCase()));
                     const missingSkills = selectedJob.tags.filter((t) => !candidate.skills.some((s) => s.toLowerCase() === t.toLowerCase()));
                     
-                    // Match score: percent of required skills covered
+                    // Match score
                     const score = selectedJob.tags.length > 0 
                       ? Math.round((matchedSkills.length / selectedJob.tags.length) * 100)
                       : 50;
@@ -1342,95 +1937,111 @@ export default function PortalWorkspace({
                   }).sort((a, b) => b.score - a.score);
 
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.25s ease' }}>
-                      <div className="card" style={{ padding: '20px', borderLeft: '4px solid var(--primary)', background: 'var(--surface)' }}>
-                        <h4 style={{ fontSize: '15px', fontWeight: 'bold' }}>🎯 {selectedJob.title}</h4>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          🏢 {selectedJob.company} | 📍 {selectedJob.location} | 💰 {selectedJob.salary}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.25s ease' }}>
+                      <div className="card bento-gradient-1" style={{ padding: '24px', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-lg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>🎯 {selectedJob.title}</h4>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: 600 }}>
+                              🏢 {selectedJob.company} | 📍 {selectedJob.location} | 💰 {selectedJob.salary}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '14px' }}>
                           {selectedJob.tags.map((tag, idx) => (
-                            <span key={idx} className="job-tag" style={{ fontSize: '11px', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}>
+                            <span key={idx} className="job-tag" style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary)', border: '1px solid rgba(79, 70, 229, 0.12)', padding: '4px 10px', borderRadius: '4px', fontWeight: 700 }}>
                               {tag}
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginTop: '8px' }}>
+                      <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.02em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
                         {locale === 'vi' ? 'Kết quả khớp nối ứng viên:' : 'Candidate Match Results:'}
                       </h3>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         {matchedCandidates.map(({ candidate, score, matchedSkills, missingSkills }) => {
                           const hasApplied = applications.some((app) => app.jobId === selectedJob.id && app.candidateId === candidate.id);
+                          
+                          // Score colors based on percentage
+                          const scoreColor = score >= 75 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--danger)';
+                          const scoreBg = score >= 75 ? 'var(--success-bg)' : score >= 40 ? 'var(--warning-bg)' : 'var(--danger-bg)';
                           
                           return (
                             <div
                               key={candidate.id}
-                              className="card"
+                              className="bento-card"
                               style={{
-                                padding: '20px',
+                                padding: '24px',
                                 display: 'grid',
                                 gridTemplateColumns: '1fr auto',
-                                gap: '20px',
+                                gap: '24px',
                                 alignItems: 'center',
                                 border: '1px solid var(--border)',
                                 background: 'var(--surface)'
                               }}
                             >
-                              <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <h4 style={{ fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }} onClick={() => handleOpenCVModal(candidate)}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <h4 style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleOpenCVModal(candidate)}>
                                     {candidate.name}
                                   </h4>
                                   <span className="badge" style={{
-                                    backgroundColor: score >= 75 ? 'var(--success-bg)' : score >= 40 ? 'var(--secondary-light)' : 'rgba(255,0,0,0.05)',
-                                    color: score >= 75 ? 'var(--success)' : score >= 40 ? 'var(--secondary)' : 'var(--danger)',
-                                    fontWeight: 'bold'
+                                    backgroundColor: scoreBg,
+                                    color: scoreColor,
+                                    fontWeight: 800,
+                                    fontSize: '11px',
+                                    borderRadius: '12px',
+                                    padding: '4px 10px',
+                                    border: `1px solid ${scoreColor}20`
                                   }}>
                                     {score}% Match
                                   </span>
                                 </div>
-                                <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600, marginTop: '2px' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 700 }}>
                                   {candidate.title} (Rating: ★ {candidate.rating !== undefined ? Number(candidate.rating).toFixed(1) : '5.0'})
                                 </div>
 
-                                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
+                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5, maxWidth: '600px' }}>
                                   {candidate.summary}
                                 </p>
 
                                 {/* Skill overlap report */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
-                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11.5px' }}>
-                                    <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>✓ {locale === 'vi' ? 'Trùng khớp:' : 'Matches:'}</span>
-                                    {matchedSkills.length > 0 ? matchedSkills.map((s, idx) => (
-                                      <span key={idx} style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '2px 6px', borderRadius: '4px', fontSize: '10.5px' }}>{s}</span>
-                                    )) : <span style={{ color: 'var(--text-muted)' }}>None</span>}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', background: 'var(--background)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11.5px' }}>
+                                    <span style={{ color: 'var(--success)', fontWeight: 800, width: '90px', display: 'inline-block' }}>✓ {locale === 'vi' ? 'Trùng khớp:' : 'Matches:'}</span>
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                      {matchedSkills.length > 0 ? matchedSkills.map((s, idx) => (
+                                        <span key={idx} className="tag-match" style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 600 }}>{s}</span>
+                                      )) : <span style={{ color: 'var(--text-muted)' }}>None</span>}
+                                    </div>
                                   </div>
 
-                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11.5px' }}>
-                                    <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>✗ {locale === 'vi' ? 'Còn thiếu:' : 'Missing:'}</span>
-                                    {missingSkills.length > 0 ? missingSkills.map((s, idx) => (
-                                      <span key={idx} style={{ background: 'rgba(255,0,0,0.05)', color: 'var(--danger)', padding: '2px 6px', borderRadius: '4px', fontSize: '10.5px' }}>{s}</span>
-                                    )) : <span style={{ color: 'var(--text-muted)' }}>None</span>}
+                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11.5px', borderTop: '1px dashed var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+                                    <span style={{ color: 'var(--danger)', fontWeight: 800, width: '90px', display: 'inline-block' }}>✗ {locale === 'vi' ? 'Còn thiếu:' : 'Missing:'}</span>
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                      {missingSkills.length > 0 ? missingSkills.map((s, idx) => (
+                                        <span key={idx} className="tag-missing" style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 600 }}>{s}</span>
+                                      )) : <span style={{ color: 'var(--text-muted)' }}>None</span>}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch', minWidth: '120px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'stretch', minWidth: '130px' }}>
                                 {hasApplied ? (
                                   <button
                                     type="button"
                                     disabled
                                     style={{
-                                      padding: '8px 12px',
-                                      fontSize: '12px',
-                                      fontWeight: 'bold',
-                                      background: 'var(--surface-hover)',
+                                      padding: '10px 14px',
+                                      fontSize: '12.5px',
+                                      fontWeight: 800,
+                                      background: 'var(--background)',
                                       color: 'var(--text-muted)',
                                       border: '1px solid var(--border)',
-                                      borderRadius: '6px',
+                                      borderRadius: 'var(--radius-md)',
                                       textAlign: 'center'
                                     }}
                                   >
@@ -1440,7 +2051,7 @@ export default function PortalWorkspace({
                                   <button
                                     type="button"
                                     className="apply-btn"
-                                    style={{ padding: '8px 12px', fontSize: '12px' }}
+                                    style={{ padding: '10px 14px', fontSize: '12.5px', fontWeight: 800, borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}
                                     onClick={async () => {
                                       setIsAssigningJobId(candidate.id);
                                       const res = await applyToJob(selectedJob.id, candidate.id);
@@ -1460,7 +2071,7 @@ export default function PortalWorkspace({
                                 <button
                                   type="button"
                                   className="nav-tab"
-                                  style={{ margin: 0, padding: '8px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'var(--surface)', textAlign: 'center' }}
+                                  style={{ margin: 0, padding: '10px 14px', fontSize: '12.5px', border: '1px solid var(--border)', background: 'var(--surface)', textAlign: 'center', borderRadius: 'var(--radius-md)', fontWeight: 700 }}
                                   onClick={() => onOpenChat(candidate.name)}
                                 >
                                   💬 {locale === 'vi' ? 'Trò chuyện' : 'Chat'}
@@ -1476,15 +2087,12 @@ export default function PortalWorkspace({
               </div>
             )}
 
-            {/* Custom css styles for Kanban */}
+            {/* Custom styles override */}
             <style dangerouslySetInnerHTML={{__html: `
-              .kanban-card-hover {
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-              }
-              .kanban-card-hover:hover {
+              .kanban-card:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 border-color: var(--primary) !important;
+                box-shadow: var(--shadow-md);
               }
             `}} />
           </div>
@@ -1781,62 +2389,54 @@ export default function PortalWorkspace({
 
         {/* SUB-TAB: ACCOUNTS MANAGEMENT (ADMIN ONLY) */}
         {activeSubTab === 'accounts' && currentUser.role === 'admin' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="ba-tab-view ba-animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="ba-header-section">
               <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                  {locale === 'vi' ? 'Hệ thống Quản lý Tài khoản' : 'Account Management System'}
-                </h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  {locale === 'vi' ? 'Admin cấp tài khoản truy cập hệ thống cho TA Staff và BA Manager.' : 'Admin provisions access accounts for TA Staff and BA Manager.'}
-                </p>
+                <h1 className="ba-title">{locale === 'vi' ? 'Hệ thống Quản lý Tài khoản' : 'Account Management System'}</h1>
+                <p className="ba-subtitle">{locale === 'vi' ? 'Admin cấp tài khoản truy cập hệ thống cho TA Staff và BA Manager.' : 'Admin provisions access accounts for TA Staff and BA Manager.'}</p>
               </div>
             </div>
 
             {/* Create Account Form */}
-            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--primary)' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                {locale === 'vi' ? 'Cấp tài khoản mới' : 'Provision New Account'}
-              </h3>
+            <div className="ba-table-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="ba-table-header" style={{ margin: '-24px -24px 8px -24px', padding: '16px 20px' }}>
+                <h3 className="ba-table-header-title">🔑 {locale === 'vi' ? 'Cấp tài khoản mới' : 'Provision New Account'}</h3>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Họ và tên *' : 'Full Name *'}</label>
+                <div className="ba-form-group">
+                  <label className="ba-form-label">{locale === 'vi' ? 'Họ và tên *' : 'Full Name *'}</label>
                   <input
                     type="text"
-                    className="search-input"
-                    style={{ width: '100%' }}
+                    className="ba-input"
                     placeholder="e.g. Nguyễn Văn A"
                     value={newAccName}
                     onChange={(e) => setNewAccName(e.target.value)}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Email đăng nhập *' : 'Login Email *'}</label>
+                <div className="ba-form-group">
+                  <label className="ba-form-label">{locale === 'vi' ? 'Email đăng nhập *' : 'Login Email *'}</label>
                   <input
                     type="email"
-                    className="search-input"
-                    style={{ width: '100%' }}
+                    className="ba-input"
                     placeholder="e.g. name@vertex.vn"
                     value={newAccEmail}
                     onChange={(e) => setNewAccEmail(e.target.value)}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Mật khẩu khởi tạo *' : 'Initial Password *'}</label>
+                <div className="ba-form-group">
+                  <label className="ba-form-label">{locale === 'vi' ? 'Mật khẩu khởi tạo *' : 'Initial Password *'}</label>
                   <input
                     type="password"
-                    className="search-input"
-                    style={{ width: '100%' }}
+                    className="ba-input"
                     placeholder="e.g. password"
                     value={newAccPassword}
                     onChange={(e) => setNewAccPassword(e.target.value)}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Vai trò truy cập *' : 'System Role *'}</label>
+                <div className="ba-form-group">
+                  <label className="ba-form-label">{locale === 'vi' ? 'Vai trò truy cập *' : 'System Role *'}</label>
                   <select
-                    className="search-input"
-                    style={{ width: '100%', background: 'var(--background)', color: 'var(--text)' }}
+                    className="ba-input"
                     value={newAccRole}
                     onChange={(e) => setNewAccRole(e.target.value)}
                   >
@@ -1846,11 +2446,10 @@ export default function PortalWorkspace({
                   </select>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
                 <button
                   type="button"
-                  className="btn-solid-orange"
-                  style={{ height: '38px', padding: '0 16px' }}
+                  className="ba-btn-primary"
                   onClick={handleCreateAccount}
                   disabled={isSavingAccount}
                 >
@@ -1860,32 +2459,36 @@ export default function PortalWorkspace({
             </div>
 
             {/* Accounts List Table */}
-            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+            <div className="ba-table-container">
+              <div className="ba-table-header">
+                <h3 className="ba-table-header-title">{locale === 'vi' ? 'Danh sách tài khoản hệ thống' : 'System Accounts Directory'}</h3>
+              </div>
+              <table className="ba-table">
                 <thead>
-                  <tr style={{ background: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '14px 16px' }}>{locale === 'vi' ? 'Họ và tên' : 'Full Name'}</th>
-                    <th style={{ padding: '14px 16px' }}>{locale === 'vi' ? 'Email đăng nhập' : 'Login Email'}</th>
-                    <th style={{ padding: '14px 16px' }}>{locale === 'vi' ? 'Vai trò' : 'System Role'}</th>
-                    <th style={{ padding: '14px 16px' }}>{locale === 'vi' ? 'Ngày tạo' : 'Date Created'}</th>
+                  <tr>
+                    <th>{locale === 'vi' ? 'Họ và tên' : 'Full Name'}</th>
+                    <th>{locale === 'vi' ? 'Email đăng nhập' : 'Login Email'}</th>
+                    <th>{locale === 'vi' ? 'Vai trò' : 'System Role'}</th>
+                    <th>{locale === 'vi' ? 'Ngày tạo' : 'Date Created'}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {accounts.map((acc) => (
-                    <tr key={acc.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '14px 16px', fontWeight: 'bold' }}>{acc.name}</td>
-                      <td style={{ padding: '14px 16px', fontFamily: 'monospace' }}>{acc.email}</td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <span className="badge" style={{
-                          backgroundColor: acc.role === 'admin' ? 'var(--danger-bg)' : acc.role === 'ta' ? 'var(--primary-light)' : 'var(--secondary-light)',
-                          color: acc.role === 'admin' ? 'var(--danger)' : acc.role === 'ta' ? 'var(--primary)' : 'var(--secondary)',
-                          textTransform: 'uppercase',
-                          fontWeight: 'bold'
-                        }}>
+                    <tr key={acc.id}>
+                      <td style={{ fontWeight: 'bold' }}>{acc.name}</td>
+                      <td style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{acc.email}</td>
+                      <td>
+                        <span className={`ba-badge ${
+                          acc.role === 'admin' 
+                            ? 'ba-badge-danger' 
+                            : acc.role === 'ta' 
+                            ? 'ba-badge-info' 
+                            : 'ba-badge-warning'
+                        }`}>
                           {acc.role === 'admin' ? 'Admin' : acc.role === 'ta' ? 'TA Staff' : 'BA Manager'}
                         </span>
                       </td>
-                      <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>
+                      <td style={{ color: 'var(--text-muted)' }}>
                         {new Date(acc.createdAt).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')}
                       </td>
                     </tr>
@@ -1928,19 +2531,37 @@ export default function PortalWorkspace({
 
               {/* Modal tabs for TA Staff */}
               {isTA && (
-                <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border)', width: '100%', paddingBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '6px', background: 'var(--background)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginTop: '4px' }}>
                   <button
                     type="button"
-                    className={`nav-tab-modern ${modalActiveTab === 'cv' ? 'active' : ''}`}
-                    style={{ margin: 0, padding: '6px 14px', fontSize: '12.5px', background: modalActiveTab === 'cv' ? 'var(--surface-hover)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      background: modalActiveTab === 'cv' ? 'var(--primary)' : 'transparent',
+                      color: modalActiveTab === 'cv' ? '#fff' : 'var(--text-secondary)',
+                      transition: 'all var(--transition-fast)'
+                    }}
                     onClick={() => setModalActiveTab('cv')}
                   >
                     📄 {locale === 'vi' ? 'Thông tin CV' : 'CV Profile'}
                   </button>
                   <button
                     type="button"
-                    className={`nav-tab-modern ${modalActiveTab === 'assessment' ? 'active' : ''}`}
-                    style={{ margin: 0, padding: '6px 14px', fontSize: '12.5px', background: modalActiveTab === 'assessment' ? 'var(--surface-hover)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      background: modalActiveTab === 'assessment' ? 'var(--primary)' : 'transparent',
+                      color: modalActiveTab === 'assessment' ? '#fff' : 'var(--text-secondary)',
+                      transition: 'all var(--transition-fast)'
+                    }}
                     onClick={() => setModalActiveTab('assessment')}
                   >
                     ⭐ {locale === 'vi' ? 'Đánh giá nội bộ' : 'TA Assessment'}
@@ -2018,22 +2639,27 @@ export default function PortalWorkspace({
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.2s ease' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Trạng thái hoạt động' : 'Availability Status'}</label>
-                      <select
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none' }}
-                        value={taStatus}
-                        onChange={(e) => setTaStatus(e.target.value)}
-                      >
-                        <option value="AVAILABLE">{locale === 'vi' ? 'Trống dự án (Available)' : 'Available'}</option>
-                        <option value="VETTING">{locale === 'vi' ? 'Đang đánh giá (Vetting)' : 'Vetting'}</option>
-                        <option value="PLACED">{locale === 'vi' ? 'Đã phái cử (Placed)' : 'Placed'}</option>
-                        <option value="ON_LEAVE">{locale === 'vi' ? 'Nghỉ phép (On Leave)' : 'On Leave'}</option>
-                      </select>
+                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Trạng thái hoạt động' : 'Availability Status'}</label>
+                      <div style={{ position: 'relative' }}>
+                        <select
+                          style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+                          value={taStatus}
+                          onChange={(e) => setTaStatus(e.target.value)}
+                        >
+                          <option value="AVAILABLE">{locale === 'vi' ? 'Trống dự án (Available)' : 'Available'}</option>
+                          <option value="VETTING">{locale === 'vi' ? 'Đang đánh giá (Vetting)' : 'Vetting'}</option>
+                          <option value="PLACED">{locale === 'vi' ? 'Đã phái cử (Placed)' : 'Placed'}</option>
+                          <option value="ON_LEAVE">{locale === 'vi' ? 'Nghỉ phép (On Leave)' : 'On Leave'}</option>
+                        </select>
+                        <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '10px' }}>
+                          ▼
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Điểm đánh giá kỹ thuật' : 'Technical Rating (1-5)'}</label>
+                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Điểm đánh giá kỹ thuật' : 'Technical Rating (1-5)'}</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
@@ -2050,22 +2676,22 @@ export default function PortalWorkspace({
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Trình độ tiếng Anh' : 'English Level'}</label>
+                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Trình độ tiếng Anh' : 'English Level'}</label>
                       <input
                         type="text"
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none' }}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', fontSize: '13px' }}
                         placeholder="e.g. IELTS 6.5, TOEIC 850, B2"
                         value={taEnglish}
                         onChange={(e) => setTaEnglish(e.target.value)}
                       />
                     </div>
 
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Mức lương kỳ vọng (Gross)' : 'Expected Salary (Gross)'}</label>
+                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Mức lương kỳ vọng (Gross)' : 'Expected Salary (Gross)'}</label>
                       <input
                         type="text"
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none' }}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', fontSize: '13px' }}
                         placeholder="e.g. 35,000,000 VND / tháng"
                         value={taSalary}
                         onChange={(e) => setTaSalary(e.target.value)}
@@ -2073,11 +2699,11 @@ export default function PortalWorkspace({
                     </div>
                   </div>
 
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontWeight: 'bold', fontSize: '12.5px' }}>{locale === 'vi' ? 'Ghi chú phỏng vấn & Nhận xét nội bộ' : 'Interview & Vetting Notes'}</label>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Ghi chú phỏng vấn & Nhận xét nội bộ' : 'Interview & Vetting Notes'}</label>
                     <textarea
                       rows={5}
-                      style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border)', color: 'var(--text-main)', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: '13px' }}
                       placeholder={locale === 'vi' ? 'Nhập ghi chú chi tiết về ứng viên sau khi đánh giá...' : 'Enter candidate notes after assessment...'}
                       value={taNotes}
                       onChange={(e) => setTaNotes(e.target.value)}
@@ -2087,7 +2713,7 @@ export default function PortalWorkspace({
                   <button
                     type="button"
                     className="apply-btn"
-                    style={{ width: '100%', padding: '12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13.5px', marginTop: '8px' }}
+                    style={{ width: '100%', padding: '12px', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 800, fontSize: '13.5px', marginTop: '8px', boxShadow: 'var(--shadow-sm)' }}
                     onClick={handleSaveTAInfo}
                     disabled={isSavingTAInfo}
                   >
@@ -2100,8 +2726,8 @@ export default function PortalWorkspace({
             <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
-                className="nav-tab"
-                style={{ border: '1px solid var(--border)', margin: 0, padding: '8px 18px' }}
+                className="btn-secondary"
+                style={{ border: '1px solid var(--border)', margin: 0, padding: '8px 20px', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '12.5px', background: 'var(--surface)' }}
                 onClick={() => setViewingCandidateCV(null)}
               >
                 {pt.modalBtnClose}
