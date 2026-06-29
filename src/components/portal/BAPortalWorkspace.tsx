@@ -61,7 +61,12 @@ interface BAPortalWorkspaceProps {
 export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BAPortalWorkspaceProps) {
   const router = useRouter();
   // Tab states
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'jobs' | 'tickets' | 'billing'>('pipeline');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'pipeline' | 'jobs' | 'tickets' | 'billing'>('analytics');
+
+  // Interactive filters for metrics
+  const [filterTech, setFilterTech] = useState('all');
+  const [filterDept, setFilterDept] = useState('all');
+  const [filterDate, setFilterDate] = useState('30');
 
   // MOCK STATE - Pipeline leads (Tab 1)
   const [leads, setLeads] = useState<StartupLead[]>([
@@ -261,6 +266,16 @@ export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BA
 
         <button
           type="button"
+          onClick={() => setActiveTab('analytics')}
+          className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+          style={{ width: '100%', justifyContent: 'flex-start', margin: 0 }}
+        >
+          <TrendingUp size={16} />
+          {locale === 'vi' ? 'Thống kê & KPI' : 'Metrics & Analytics'}
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('pipeline')}
           className={`nav-tab ${activeTab === 'pipeline' ? 'active' : ''}`}
           style={{ width: '100%', justifyContent: 'flex-start', margin: 0 }}
@@ -302,6 +317,268 @@ export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BA
 
       {/* Main Workspace Frame */}
       <div className="tab-content" style={{ animation: 'fadeIn 0.25s ease' }}>
+
+          {/* TAB 0: METRICS & ANALYTICS */}
+          {activeTab === 'analytics' && (
+            <div className="ba-tab-view ba-animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="ba-header-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h1 className="ba-title">{locale === 'vi' ? 'Thống kê & KPI Hiệu năng' : 'Metrics & Analytics Dashboard'}</h1>
+                  <p className="ba-subtitle">{locale === 'vi' ? 'Báo cáo hiệu năng cung ứng nhân sự, tối ưu chi phí và tỷ lệ chuyển đổi.' : 'Monitor operational staffing metrics, cost optimizations, and vetting conversion rates.'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => alert(locale === 'vi' ? 'Đang xuất báo cáo CSV...' : 'Exporting metrics report...')}
+                  className="ba-btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '10px 18px' }}
+                >
+                  <TrendingUp size={14} />
+                  {locale === 'vi' ? 'Xuất Báo Cáo' : 'Export Metrics'}
+                </button>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="card" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-hover)', border: '1px solid var(--border)' }}>
+                <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                  🔍 {locale === 'vi' ? 'Bộ lọc phân tích:' : 'Filter Analytics:'}
+                </span>
+                
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {/* Date Filter */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      style={{ padding: '8px 30px 8px 12px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)', background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontWeight: 600, minWidth: '150px' }}
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                    >
+                      <option value="30">{locale === 'vi' ? '30 ngày qua' : 'Last 30 Days'}</option>
+                      <option value="90">{locale === 'vi' ? '90 ngày qua' : 'Last 90 Days'}</option>
+                      <option value="365">{locale === 'vi' ? '1 năm qua' : 'This Year'}</option>
+                    </select>
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '8px' }}>▼</span>
+                  </div>
+
+                  {/* Tech Stack Filter */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      style={{ padding: '8px 30px 8px 12px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)', background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontWeight: 600, minWidth: '160px' }}
+                      value={filterTech}
+                      onChange={(e) => setFilterTech(e.target.value)}
+                    >
+                      <option value="all">{locale === 'vi' ? 'Tất cả Tech Stack' : 'All Tech Stacks'}</option>
+                      <option value="java">Java / Spring Boot</option>
+                      <option value="react">React / Next.js</option>
+                      <option value="devops">DevOps / AWS Cloud</option>
+                      <option value="flutter">Flutter Mobile</option>
+                    </select>
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '8px' }}>▼</span>
+                  </div>
+
+                  {/* Department Filter */}
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      style={{ padding: '8px 30px 8px 12px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)', background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text-primary)', outline: 'none', appearance: 'none', cursor: 'pointer', fontWeight: 600, minWidth: '160px' }}
+                      value={filterDept}
+                      onChange={(e) => setFilterDept(e.target.value)}
+                    >
+                      <option value="all">{locale === 'vi' ? 'Tất cả Phòng ban' : 'All Departments'}</option>
+                      <option value="engineering">{locale === 'vi' ? 'Phát triển Kỹ thuật' : 'Engineering'}</option>
+                      <option value="product">{locale === 'vi' ? 'Quản lý Sản phẩm' : 'Product'}</option>
+                      <option value="data">{locale === 'vi' ? 'Hạ tầng Data & AI' : 'Data & AI Cloud'}</option>
+                    </select>
+                    <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)', fontSize: '8px' }}>▼</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* KPI Cards Widget Block */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                {/* Cost Optimized */}
+                <div className="card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--primary)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {locale === 'vi' ? 'Tối ưu hóa Chi phí' : 'Cost Optimized'}
+                    </span>
+                    <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>
+                      60%
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      {locale === 'vi' ? 'Tiết kiệm hơn tuyển onboard truyền thống' : 'Savings vs traditional recruitment'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '12px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <TrendingUp size={24} />
+                  </div>
+                </div>
+
+                {/* Time-to-Hire */}
+                <div className="card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--secondary)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {locale === 'vi' ? 'Thời gian tuyển dụng' : 'Time-to-Hire'}
+                    </span>
+                    <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--secondary)', lineHeight: 1 }}>
+                      3-5 {locale === 'vi' ? 'Ngày' : 'Days'}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      {locale === 'vi' ? 'Khớp nối nhanh từ mạng lưới sẵn sàng' : 'Avg matching speed of pre-vetted devs'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '12px', borderRadius: '50%', background: 'var(--secondary-light)', color: 'var(--secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clock size={24} />
+                  </div>
+                </div>
+
+                {/* Conversion Rate */}
+                <div className="card" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--success)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {locale === 'vi' ? 'Chuyển đổi Tài năng' : 'Top Talent Conversion'}
+                    </span>
+                    <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
+                      3%
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      {locale === 'vi' ? 'Tỷ lệ pass qua phễu sàng lọc 4 lớp' : 'Pre-vetting pass rate via 4-layer engine'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '12px', borderRadius: '50%', background: 'var(--success-bg)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldCheck size={24} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual Charts Section */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
+                {/* Donut Chart Card */}
+                <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
+                    🎯 {locale === 'vi' ? 'Tỷ lệ chấp thuận qua phễu sàng lọc' : 'Screening Funnel & Conversion Rate'}
+                  </h3>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', height: '240px', position: 'relative' }}>
+                    {/* SVG Donut Chart */}
+                    <div style={{ position: 'relative', width: '160px', height: '160px' }}>
+                      <svg width="100%" height="100%" viewBox="0 0 42 42">
+                        {/* Background track (97%) */}
+                        <circle
+                          cx="21"
+                          cy="21"
+                          r="15.915"
+                          fill="transparent"
+                          stroke="var(--border)"
+                          strokeWidth="4"
+                        />
+                        {/* 3% Segment */}
+                        <circle
+                          cx="21"
+                          cy="21"
+                          r="15.915"
+                          fill="transparent"
+                          stroke="var(--primary)"
+                          strokeWidth="4.5"
+                          strokeDasharray="3 97"
+                          strokeDashoffset="25"
+                          strokeLinecap="round"
+                          style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                        />
+                      </svg>
+                      {/* Donut Center Label */}
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>3%</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                          {locale === 'vi' ? 'Vượt Qua' : 'Pre-Vetted'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Funnel Legend */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, fontSize: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--text-muted)' }} />
+                        <span style={{ color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Hồ sơ vào phễu: 100%' : 'Total Sourced: 100%'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--secondary)' }} />
+                        <span style={{ color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Đạt Giao tiếp: 35%' : 'Comm Passed: 35%'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#fbbf24' }} />
+                        <span style={{ color: 'var(--text-secondary)' }}>{locale === 'vi' ? 'Đạt Kỹ thuật: 12%' : 'Tech Passed: 12%'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--primary)' }} />
+                        <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{locale === 'vi' ? 'Chấp nhận: 3%' : 'Matched & Hired: 3%'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Elegant Line/Bar Chart Card */}
+                <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
+                    📈 {locale === 'vi' ? 'Xu hướng rút ngắn thời gian phái cử (Ngày)' : 'Average Time-to-Hire Trends (Days)'}
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '240px', position: 'relative', paddingLeft: '24px', paddingBottom: '16px' }}>
+                    {/* Y-Axis Gridlines & Labels */}
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: '36px', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', width: '16px', textAlign: 'right' }}>8</span>
+                        <div style={{ flex: 1, borderTop: '1px dashed var(--border)' }} />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', width: '16px', textAlign: 'right' }}>6</span>
+                        <div style={{ flex: 1, borderTop: '1px dashed var(--border)' }} />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', width: '16px', textAlign: 'right' }}>4</span>
+                        <div style={{ flex: 1, borderTop: '1px dashed var(--border)' }} />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', width: '16px', textAlign: 'right' }}>2</span>
+                        <div style={{ flex: 1, borderTop: '1px dashed var(--border)' }} />
+                      </div>
+                    </div>
+
+                    {/* Bars Grid */}
+                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', height: '100%', zIndex: 5, paddingLeft: '8px' }}>
+                      {/* Jan: 7 days */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '40px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>7.0d</span>
+                        <div style={{ width: '16px', height: '140px', background: 'linear-gradient(to top, var(--primary-light), var(--primary))', borderRadius: '4px 4px 0 0', transition: 'all 0.2s' }} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Jan</span>
+                      </div>
+                      {/* Feb: 6.2 days */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '40px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>6.2d</span>
+                        <div style={{ width: '16px', height: '124px', background: 'linear-gradient(to top, var(--primary-light), var(--primary))', borderRadius: '4px 4px 0 0', transition: 'all 0.2s' }} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Feb</span>
+                      </div>
+                      {/* Mar: 5.0 days */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '40px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>5.0d</span>
+                        <div style={{ width: '16px', height: '100px', background: 'linear-gradient(to top, var(--primary-light), var(--primary))', borderRadius: '4px 4px 0 0', transition: 'all 0.2s' }} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Mar</span>
+                      </div>
+                      {/* Apr: 4.1 days */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '40px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>4.1d</span>
+                        <div style={{ width: '16px', height: '82px', background: 'linear-gradient(to top, var(--primary-light), var(--secondary))', borderRadius: '4px 4px 0 0', transition: 'all 0.2s' }} />
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Apr</span>
+                      </div>
+                      {/* May: 3.2 days */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '40px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--success)' }}>3.2d</span>
+                        <div style={{ width: '16px', height: '64px', background: 'linear-gradient(to top, var(--success-bg), var(--success))', borderRadius: '4px 4px 0 0', transition: 'all 0.2s' }} />
+                        <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 'bold', marginTop: '4px' }}>May</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TAB 1: STARTUP PIPELINE BOARD (KANBAN) */}
           {activeTab === 'pipeline' && (

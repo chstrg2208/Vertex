@@ -435,6 +435,18 @@ export default function PortalWorkspace({
   const [newAccRole, setNewAccRole] = useState('ta');
   const [isSavingAccount, setIsSavingAccount] = useState(false);
 
+  // Admin Permission Matrix State
+  const [permissions, setPermissions] = useState({
+    ta: { view: true, edit: true, delete: false },
+    ba: { view: true, edit: true, delete: false },
+    admin: { view: true, edit: true, delete: true }
+  });
+
+  // Admin Confirmation Modal & Danger Zone State
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<{ type: 'user' | 'contract'; id: string; name: string } | null>(null);
+  const [isExecutingDestruction, setIsExecutingDestruction] = useState(false);
+
   // CV Parser Simulation State
   const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -737,6 +749,46 @@ ${taNotesRaw}`;
     } else {
       alert(result.error || 'Failed to create account');
     }
+  };
+
+  const togglePermission = (role: 'ta' | 'ba' | 'admin', type: 'view' | 'edit' | 'delete') => {
+    setPermissions(prev => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        [type]: !prev[role][type]
+      }
+    }));
+  };
+
+  const handleOpenConfirmModal = (type: 'user' | 'contract', id: string, name: string) => {
+    setConfirmTarget({ type, id, name });
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmDestruction = async () => {
+    if (!confirmTarget) return;
+    setIsExecutingDestruction(true);
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    setIsExecutingDestruction(false);
+    setIsConfirmModalOpen(false);
+    
+    if (confirmTarget.type === 'user') {
+      alert(locale === 'vi' 
+        ? `Đã xóa vĩnh viễn tài khoản người dùng: ${confirmTarget.name}` 
+        : `Permanently deleted user account: ${confirmTarget.name}`
+      );
+    } else {
+      alert(locale === 'vi' 
+        ? `Đã hủy bỏ hợp đồng pháp nhân của đối tác: ${confirmTarget.name}` 
+        : `Successfully cancelled entity contract for partner: ${confirmTarget.name}`
+      );
+    }
+    setConfirmTarget(null);
+    router.refresh();
   };
 
   if (currentUser.role === 'ba') {
@@ -2010,31 +2062,43 @@ ${taNotesRaw}`;
 
             {/* Mode 1: KANBAN BOARD */}
             {pipelineMode === 'kanban' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', overflowX: 'auto', paddingBottom: '12px' }}>
-                {(['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'HIRED', 'REJECTED'] as const).map((stage) => {
-                  const stageApps = applications.filter((app) => app.status === stage);
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', paddingBottom: '16px' }}>
+                {(['TECHNICAL', 'COMMUNICATION', 'MINDSET', 'COMMITMENT'] as const).map((stage, sIdx, sArr) => {
+                  // Group applications by stage
+                  const stageApps = applications.filter((app) => {
+                    const status = app.status;
+                    if (stage === 'TECHNICAL') {
+                      return status === 'TECHNICAL' || status === 'APPLIED' || status === 'SCREENING';
+                    }
+                    if (stage === 'COMMUNICATION') {
+                      return status === 'COMMUNICATION';
+                    }
+                    if (stage === 'MINDSET') {
+                      return status === 'MINDSET' || status === 'INTERVIEW';
+                    }
+                    if (stage === 'COMMITMENT') {
+                      return status === 'COMMITMENT' || status === 'OFFERED' || status === 'HIRED' || status === 'REJECTED';
+                    }
+                    return false;
+                  });
                   
                   const getStageTitle = (st: string) => {
                     switch (st) {
-                      case 'APPLIED': return locale === 'vi' ? 'Nộp hồ sơ' : 'Applied';
-                      case 'SCREENING': return locale === 'vi' ? 'Lọc hồ sơ' : 'Screening';
-                      case 'INTERVIEW': return locale === 'vi' ? 'Phỏng vấn' : 'Interview';
-                      case 'OFFERED': return locale === 'vi' ? 'Đề nghị' : 'Offered';
-                      case 'HIRED': return locale === 'vi' ? 'Đã nhận' : 'Hired';
-                      case 'REJECTED': return locale === 'vi' ? 'Từ chối' : 'Rejected';
+                      case 'TECHNICAL': return locale === 'vi' ? '1. Đánh giá Kỹ thuật' : '1. Technical Vetting';
+                      case 'COMMUNICATION': return locale === 'vi' ? '2. Giao tiếp & Ngoại ngữ' : '2. Communication Layer';
+                      case 'MINDSET': return locale === 'vi' ? '3. Tư duy & Logic' : '3. Mindset & Logic';
+                      case 'COMMITMENT': return locale === 'vi' ? '4. Cam kết & Phái cử' : '4. Commitment & Offer';
                       default: return st;
                     }
                   };
 
                   const getStageColor = (st: string) => {
                     switch (st) {
-                      case 'APPLIED': return 'var(--text-muted)';
-                      case 'SCREENING': return 'var(--secondary)';
-                      case 'INTERVIEW': return 'var(--primary)';
-                      case 'OFFERED': return '#e3a300';
-                      case 'HIRED': return 'var(--success)';
-                      case 'REJECTED': return 'var(--danger)';
-                      default: return 'gray';
+                      case 'TECHNICAL': return 'var(--primary)';
+                      case 'COMMUNICATION': return 'var(--secondary)';
+                      case 'MINDSET': return '#fbbf24'; // Amber/Gold
+                      case 'COMMITMENT': return 'var(--success)';
+                      default: return 'var(--text-muted)';
                     }
                   };
 
@@ -2053,92 +2117,132 @@ ${taNotesRaw}`;
                       }}
                       style={{
                         background: 'var(--surface)',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--radius-md)',
                         border: '1px solid var(--border)',
-                        padding: '12px',
-                        minHeight: '450px',
+                        padding: '16px',
+                        minHeight: '520px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
-                        minWidth: '160px',
-                        transition: 'background-color 0.2s'
+                        gap: '14px',
+                        transition: 'all 0.2s ease',
                       }}
                     >
                       {/* Column Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid ' + getStageColor(stage), paddingBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '12.5px', color: getStageColor(stage) }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid ' + getStageColor(stage), paddingBottom: '10px' }}>
+                        <span style={{ fontWeight: '800', fontSize: '13px', color: 'var(--text-primary)' }}>
                           {getStageTitle(stage)}
                         </span>
-                        <span style={{ fontSize: '11px', background: 'var(--background)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>
+                        <span style={{ fontSize: '11px', background: 'var(--background)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '20px', fontWeight: 'bold', border: '1px solid var(--border)' }}>
                           {stageApps.length}
                         </span>
                       </div>
 
                       {/* App cards list */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
-                        {stageApps.map((app) => (
-                          <div
-                            key={app.id}
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('text/plain', app.id.toString());
-                              e.dataTransfer.effectAllowed = 'move';
-                            }}
-                            style={{
-                              background: 'var(--background)',
-                              border: '1px solid var(--border)',
-                              borderRadius: '8px',
-                              padding: '10px',
-                              cursor: 'grab',
-                              position: 'relative',
-                              transition: 'transform 0.2s, box-shadow 0.2s',
-                            }}
-                            className="kanban-card-hover"
-                            onClick={() => handleOpenCVModal(app.candidate as any)}
-                          >
-                            <div style={{ fontWeight: 'bold', fontSize: '12.5px', color: 'var(--text-main)' }}>{app.candidate.name}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '2px', fontWeight: 600 }}>{app.candidate.title}</div>
-                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '6px', borderTop: '1px solid var(--border)', paddingTop: '6px' }}>
-                              💼 {app.job.title} ({app.job.company})
-                            </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, maxHeight: '60vh', paddingRight: '2px' }}>
+                        {stageApps.map((app) => {
+                          const rating = app.candidate.rating !== undefined ? Number(app.candidate.rating) : 5.0;
+                          
+                          // Determine status badge (Pass / Fail / Pending)
+                          let badgeText = locale === 'vi' ? 'Đang chờ' : 'Pending';
+                          let badgeColorClass = 'ba-badge-warning';
+                          let badgeStyles = { color: 'var(--warning)', backgroundColor: 'var(--warning-bg)' };
 
-                            {/* Quick Transitions */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '10px' }} onClick={(e) => e.stopPropagation()}>
-                              {stage !== 'APPLIED' && (
-                                <button
-                                  type="button"
-                                  title="Move left"
-                                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}
-                                  onClick={async () => {
-                                    const stages = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'HIRED', 'REJECTED'];
-                                    const prevStage = stages[stages.indexOf(stage) - 1];
-                                    await updateApplicationStatus(app.id, prevStage);
-                                    router.refresh();
-                                  }}
-                                >
-                                  ◀
-                                </button>
-                              )}
-                              {stage !== 'REJECTED' && stage !== 'HIRED' && (
-                                <button
-                                  type="button"
-                                  title="Move right"
-                                  style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px' }}
-                                  onClick={async () => {
-                                    const stages = ['APPLIED', 'SCREENING', 'INTERVIEW', 'OFFERED', 'HIRED', 'REJECTED'];
-                                    const nextStage = stages[stages.indexOf(stage) + 1];
-                                    await updateApplicationStatus(app.id, nextStage);
-                                    router.refresh();
-                                  }}
-                                >
-                                  ▶
-                                </button>
-                              )}
+                          if (app.status === 'REJECTED') {
+                            badgeText = locale === 'vi' ? 'Từ chối' : 'Fail';
+                            badgeColorClass = 'ba-badge-danger';
+                            badgeStyles = { color: 'var(--danger)', backgroundColor: 'var(--danger-bg)' };
+                          } else if (rating >= 4.5) {
+                            badgeText = locale === 'vi' ? 'Đạt' : 'Pass';
+                            badgeColorClass = 'ba-badge-success';
+                            badgeStyles = { color: 'var(--success)', backgroundColor: 'var(--success-bg)' };
+                          } else if (rating < 3.0) {
+                            badgeText = locale === 'vi' ? 'Không đạt' : 'Fail';
+                            badgeColorClass = 'ba-badge-danger';
+                            badgeStyles = { color: 'var(--danger)', backgroundColor: 'var(--danger-bg)' };
+                          }
+
+                          return (
+                            <div
+                              key={app.id}
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('text/plain', app.id.toString());
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              style={{
+                                background: 'var(--background)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '14px',
+                                cursor: 'grab',
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '8px',
+                                transition: 'all 0.2s ease',
+                              }}
+                              className="kanban-card-hover"
+                              onClick={() => handleOpenCVModal(app.candidate as any)}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                                <h4 style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-primary)', margin: 0 }}>
+                                  {app.candidate.name}
+                                </h4>
+                                <span className={`badge ${badgeColorClass}`} style={{ fontSize: '9px', padding: '2px 6px', fontWeight: 'bold', ...badgeStyles }}>
+                                  {badgeText}
+                                </span>
+                              </div>
+                              
+                              <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700 }}>
+                                {app.candidate.title}
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px solid var(--border)', paddingTop: '8px', fontSize: '11px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ffb100', fontWeight: 'bold' }}>
+                                  <Star size={12} fill="#ffb100" style={{ color: '#ffb100' }} />
+                                  <span>{rating.toFixed(1)}</span>
+                                </div>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                                  🏢 {app.job.company}
+                                </span>
+                              </div>
+
+                              {/* Quick Transitions */}
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }} onClick={(e) => e.stopPropagation()}>
+                                {sIdx > 0 && (
+                                  <button
+                                    type="button"
+                                    title="Move left"
+                                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px', transition: 'all 0.1s' }}
+                                    onClick={async () => {
+                                      const prevStage = sArr[sIdx - 1];
+                                      await updateApplicationStatus(app.id, prevStage);
+                                      router.refresh();
+                                    }}
+                                  >
+                                    ◀
+                                  </button>
+                                )}
+                                {sIdx < sArr.length - 1 && (
+                                  <button
+                                    type="button"
+                                    title="Move right"
+                                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px', transition: 'all 0.1s' }}
+                                    onClick={async () => {
+                                      const nextStage = sArr[sIdx + 1];
+                                      await updateApplicationStatus(app.id, nextStage);
+                                      router.refresh();
+                                    }}
+                                  >
+                                    ▶
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {stageApps.length === 0 && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0', border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.01)' }}>
                             {locale === 'vi' ? 'Trống' : 'Empty'}
                           </div>
                         )}
@@ -2747,6 +2851,235 @@ ${taNotesRaw}`;
                 </tbody>
               </table>
             </div>
+
+            {/* Permission Matrix Table */}
+            <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
+                🔑 {locale === 'vi' ? 'Ma trận Quyền hạn (Permission Matrix)' : 'System Permission Matrix'}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+                {locale === 'vi' ? 'Cấu hình quyền hạn đọc/ghi/xóa dữ liệu hệ thống cho từng phân quyền.' : 'Manage granular system access permissions (View, Edit, Delete) per role.'}
+              </p>
+              
+              <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--background)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '12px 16px', fontWeight: 'bold' }}>{locale === 'vi' ? 'Vai trò truy cập' : 'System Role'}</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 'bold', textAlign: 'center' }}>{locale === 'vi' ? 'Đọc dữ liệu (View)' : 'View Data'}</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 'bold', textAlign: 'center' }}>{locale === 'vi' ? 'Chỉnh sửa (Edit)' : 'Edit Data'}</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 'bold', textAlign: 'center' }}>{locale === 'vi' ? 'Xóa dữ liệu (Delete)' : 'Delete Data'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(['ta', 'ba', 'admin'] as const).map((role) => (
+                      <tr key={role} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          {role === 'ta' ? 'TA Staff' : role === 'ba' ? 'BA Manager' : 'Admin'}
+                        </td>
+                        {/* View Switch */}
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+                            <input
+                              type="checkbox"
+                              checked={permissions[role].view}
+                              onChange={() => togglePermission(role, 'view')}
+                              style={{ display: 'none' }}
+                            />
+                            <div style={{
+                              width: '34px',
+                              height: '18px',
+                              backgroundColor: permissions[role].view ? 'var(--primary)' : 'var(--border)',
+                              borderRadius: '9px',
+                              position: 'relative',
+                              transition: 'background-color 0.2s',
+                            }}>
+                              <div style={{
+                                width: '14px',
+                                height: '14px',
+                                backgroundColor: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: permissions[role].view ? '18px' : '2px',
+                                transition: 'left 0.2s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                              }} />
+                            </div>
+                          </label>
+                        </td>
+                        {/* Edit Switch */}
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+                            <input
+                              type="checkbox"
+                              checked={permissions[role].edit}
+                              onChange={() => togglePermission(role, 'edit')}
+                              style={{ display: 'none' }}
+                            />
+                            <div style={{
+                              width: '34px',
+                              height: '18px',
+                              backgroundColor: permissions[role].edit ? 'var(--primary)' : 'var(--border)',
+                              borderRadius: '9px',
+                              position: 'relative',
+                              transition: 'background-color 0.2s',
+                            }}>
+                              <div style={{
+                                width: '14px',
+                                height: '14px',
+                                backgroundColor: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: permissions[role].edit ? '18px' : '2px',
+                                transition: 'left 0.2s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                              }} />
+                            </div>
+                          </label>
+                        </td>
+                        {/* Delete Switch */}
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+                            <input
+                              type="checkbox"
+                              checked={permissions[role].delete}
+                              onChange={() => togglePermission(role, 'delete')}
+                              style={{ display: 'none' }}
+                            />
+                            <div style={{
+                              width: '34px',
+                              height: '18px',
+                              backgroundColor: permissions[role].delete ? 'var(--primary)' : 'var(--border)',
+                              borderRadius: '9px',
+                              position: 'relative',
+                              transition: 'background-color 0.2s',
+                            }}>
+                              <div style={{
+                                width: '14px',
+                                height: '14px',
+                                backgroundColor: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: permissions[role].delete ? '18px' : '2px',
+                                transition: 'left 0.2s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                              }} />
+                            </div>
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Danger Zone Safeguard UX */}
+            <div className="card" style={{ padding: '20px', border: '1px dashed var(--danger)', background: 'var(--danger-bg)', borderRadius: 'var(--radius-md)' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--danger)' }}>
+                ⚠️ {locale === 'vi' ? 'Vùng Nguy Hiểm (Danger Zone)' : 'Danger Zone'}
+              </h3>
+              <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px', marginBottom: '16px' }}>
+                {locale === 'vi' 
+                  ? 'Những hành động sau đây sẽ phá hủy vĩnh viễn dữ liệu và không thể hoàn tác. Vui lòng xác nhận kỹ lưỡng.' 
+                  : 'Destructive system operations. These actions permanently erase configurations and are irreversible.'}
+              </p>
+              
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {/* Action 1: Delete User */}
+                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                    {locale === 'vi' ? 'Xóa tài khoản người dùng' : 'Delete User Account'}
+                  </span>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                    {locale === 'vi' ? 'Xóa vĩnh viễn quyền truy cập và dữ liệu lịch sử.' : 'Revoke system access and purge historic activities.'}
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#fff', background: 'var(--danger)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                      onClick={() => handleOpenConfirmModal('user', 'ta-1', 'Nguyễn Văn TA')}
+                    >
+                      {locale === 'vi' ? 'Xóa Người Dùng' : 'Purge User Account'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action 2: Cancel Contract */}
+                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                    {locale === 'vi' ? 'Hủy hợp đồng Startup' : 'Cancel Partner Contract'}
+                  </span>
+                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                    {locale === 'vi' ? 'Chấm dứt thỏa thuận phái cử và đóng tất cả pipeline.' : 'De-authorize developer supply agreements immediately.'}
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--danger)', background: 'transparent', border: '1px solid var(--danger)', borderRadius: '4px', cursor: 'pointer' }}
+                      onClick={() => handleOpenConfirmModal('contract', 'p-1', 'AlphaTech AI Corporation')}
+                    >
+                      {locale === 'vi' ? 'Hủy Hợp Đồng' : 'Terminate Contract'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Danger Zone Confirmation Modal */}
+            {isConfirmModalOpen && confirmTarget && (
+              <div className="modal-backdrop" style={{ zIndex: 10000, background: 'rgba(0,0,0,0.6)' }}>
+                <div className="modal-content" style={{ maxWidth: '450px', border: '1px solid var(--danger)', padding: '24px' }}>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                    <div style={{ padding: '10px', borderRadius: '50%', background: 'var(--danger-bg)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ShieldAlert size={24} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+                        {locale === 'vi' ? 'Xác nhận Hành động Nguy hiểm?' : 'Confirm Destructive Action?'}
+                      </h3>
+                      <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        {confirmTarget.type === 'user' ? (
+                          locale === 'vi' 
+                            ? <>Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản của <strong>{confirmTarget.name}</strong>? Dữ liệu này không thể được khôi phục.</>
+                            : <>Are you absolutely sure you want to permanently delete the user account of <strong>{confirmTarget.name}</strong>? This action is irreversible.</>
+                        ) : (
+                          locale === 'vi'
+                            ? <>Bạn có chắc chắn muốn chấm dứt hợp đồng pháp nhân với <strong>{confirmTarget.name}</strong>? Mọi thông tin thanh toán sẽ được khóa ngay lập tức.</>
+                            : <>Are you absolutely sure you want to terminate the business contract with <strong>{confirmTarget.name}</strong>? Active payroll lines will freeze instantly.</>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
+                        <button
+                          type="button"
+                          style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer' }}
+                          onClick={() => {
+                            setIsConfirmModalOpen(false);
+                            setConfirmTarget(null);
+                          }}
+                          disabled={isExecutingDestruction}
+                        >
+                          {locale === 'vi' ? 'Hủy bỏ' : 'Cancel'}
+                        </button>
+                        <button
+                          type="button"
+                          style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', color: '#fff', background: 'var(--danger)', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          onClick={handleConfirmDestruction}
+                          disabled={isExecutingDestruction}
+                        >
+                          {isExecutingDestruction ? (locale === 'vi' ? 'Đang thực thi...' : 'Executing...') : (locale === 'vi' ? 'Xác nhận thực hiện' : 'Confirm Execution')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 
