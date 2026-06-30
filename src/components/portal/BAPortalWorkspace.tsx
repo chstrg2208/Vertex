@@ -17,7 +17,9 @@ import {
   Clock,
   AlertCircle,
   Edit2,
-  Send
+  Send,
+  Filter,
+  Search
 } from 'lucide-react';
 import { updateJobStatus, createJob } from '@/app/actions';
 import { useRouter } from 'next/navigation';
@@ -339,8 +341,9 @@ export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BA
 
               {/* Filter Bar */}
               <div className="card" style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-hover)', border: '1px solid var(--border)' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
-                  🔍 {locale === 'vi' ? 'Bộ lọc phân tích:' : 'Filter Analytics:'}
+                <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Search size={14} />
+                  {locale === 'vi' ? 'Bộ lọc phân tích:' : 'Filter Analytics:'}
                 </span>
                 
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -452,8 +455,9 @@ export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BA
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
                 {/* Donut Chart Card */}
                 <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
-                    🎯 {locale === 'vi' ? 'Tỷ lệ chấp thuận qua phễu sàng lọc' : 'Screening Funnel & Conversion Rate'}
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Filter size={16} style={{ color: 'var(--primary)' }} />
+                    {locale === 'vi' ? 'Tỷ lệ chấp thuận qua phễu sàng lọc' : 'Screening Funnel & Conversion Rate'}
                   </h3>
                   
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', height: '240px', position: 'relative' }}>
@@ -1373,11 +1377,6 @@ export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BA
 
         .ba-btn-primary:hover {
           background-color: var(--primary-hover) !important;
-          transform: translateY(-0.5px);
-        }
-
-        .ba-btn-primary:active {
-          transform: translateY(0);
         }
 
         .ba-btn-secondary {
@@ -1464,7 +1463,6 @@ export default function BAPortalWorkspace({ locale, currentUser, jobs = [] }: BA
         }
 
         .ba-kanban-card:hover {
-          transform: translateY(-2px) !important;
           box-shadow: var(--shadow-md) !important;
           border-color: var(--text-muted) !important;
         }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Users, Briefcase, Layers, Plus, Search, FileText, ChevronRight, Check, X, ShieldAlert, ArrowUpRight, CloudUpload, Play, Terminal, MessageSquare, Star, Settings, Award, Sparkles } from 'lucide-react';
+import { UserCheck, Users, Briefcase, Layers, Plus, Search, FileText, ChevronLeft, ChevronRight, Check, X, ShieldAlert, ArrowUpRight, CloudUpload, Play, Terminal, MessageSquare, Star, Settings, Award, Sparkles, Key, MapPin, DollarSign, Building, AlertTriangle, Mail, Phone, Target, Zap } from 'lucide-react';
 import { createCandidate, createJob, updateApplicationStatus, updateCandidateTAInfo, applyToJob, createPartner, updateApplicationBilling, createAccount } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 import ChatTab from '../ChatTab';
@@ -800,7 +800,9 @@ ${taNotesRaw}`;
       {/* Sidebar Navigation */}
       <aside className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', height: 'fit-content' }}>
         <h4 style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0 12px 8px 12px', borderBottom: '1px solid var(--border)' }}>
-          {isTA ? pt.sidebarHeaderTA : pt.sidebarHeaderBA}
+          {currentUser.role === 'admin' 
+            ? (locale === 'vi' ? 'Hệ thống Quản trị' : 'Admin System')
+            : (isTA ? pt.sidebarHeaderTA : pt.sidebarHeaderBA)}
         </h4>
         {sidebarTabs.map((tab) => (
           <button
@@ -1103,16 +1105,19 @@ ${taNotesRaw}`;
                         <h4 style={{ fontSize: '13.5px', fontWeight: 'bold', marginTop: '6px', color: isSelected ? 'var(--primary)' : 'var(--text-main)' }}>
                           {job.title}
                         </h4>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          📍 {job.location}
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <MapPin size={12} />
+                          {job.location}
                         </div>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            💰 {job.salary}
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <DollarSign size={12} />
+                            {job.salary}
                           </span>
-                          <span style={{ fontSize: '10.5px', color: 'var(--primary)', fontWeight: 'bold' }}>
-                            👥 {assignedCount} {locale === 'vi' ? 'đã phái cử' : 'assigned'}
+                          <span style={{ fontSize: '10.5px', color: 'var(--primary)', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Users size={12} />
+                            {assignedCount} {locale === 'vi' ? 'đã phái cử' : 'assigned'}
                           </span>
                         </div>
                       </div>
@@ -1251,9 +1256,9 @@ ${taNotesRaw}`;
                             {selectedProj.title}
                           </h2>
                           <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', gap: '16px' }}>
-                            <span>🏢 <strong>{selectedProj.company}</strong></span>
-                            <span>📍 {selectedProj.location}</span>
-                            <span>💰 {selectedProj.salary}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Building size={13} /> <strong>{selectedProj.company}</strong></span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={13} /> {selectedProj.location}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><DollarSign size={13} /> {selectedProj.salary}</span>
                           </div>
                         </div>
                         <span className="badge" style={{
@@ -1581,10 +1586,11 @@ ${taNotesRaw}`;
                                   <button
                                     type="button"
                                     className="nav-tab"
-                                    style={{ margin: 0, width: '100%', padding: '8px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'var(--surface)', textAlign: 'center' }}
+                                    style={{ margin: 0, width: '100%', padding: '8px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                                     onClick={() => onOpenChat(candidate.name)}
                                   >
-                                    💬 {locale === 'vi' ? 'Trò chuyện' : 'Chat'}
+                                    <MessageSquare size={12} />
+                                    {locale === 'vi' ? 'Trò chuyện' : 'Chat'}
                                   </button>
                                 </div>
                               </div>
@@ -2034,11 +2040,15 @@ ${taNotesRaw}`;
                     cursor: 'pointer',
                     background: pipelineMode === 'kanban' ? 'var(--primary)' : 'transparent',
                     color: pipelineMode === 'kanban' ? '#fff' : 'var(--text-secondary)',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                   onClick={() => setPipelineMode('kanban')}
                 >
-                  📊 Kanban Board
+                  <Layers size={13} />
+                  Kanban Board
                 </button>
                 <button
                   type="button"
@@ -2051,11 +2061,15 @@ ${taNotesRaw}`;
                     cursor: 'pointer',
                     background: pipelineMode === 'matcher' ? 'var(--primary)' : 'transparent',
                     color: pipelineMode === 'matcher' ? '#fff' : 'var(--text-secondary)',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                   onClick={() => setPipelineMode('matcher')}
                 >
-                  ⚡ AI Matcher
+                  <Sparkles size={13} />
+                  AI Matcher
                 </button>
               </div>
             </div>
@@ -2202,8 +2216,8 @@ ${taNotesRaw}`;
                                   <Star size={12} fill="#ffb100" style={{ color: '#ffb100' }} />
                                   <span>{rating.toFixed(1)}</span>
                                 </div>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
-                                  🏢 {app.job.company}
+                                <span style={{ color: 'var(--text-muted)', fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <Building size={11} /> {app.job.company}
                                 </span>
                               </div>
 
@@ -2220,7 +2234,7 @@ ${taNotesRaw}`;
                                       router.refresh();
                                     }}
                                   >
-                                    ◀
+                                    <ChevronLeft size={12} />
                                   </button>
                                 )}
                                 {sIdx < sArr.length - 1 && (
@@ -2234,7 +2248,7 @@ ${taNotesRaw}`;
                                       router.refresh();
                                     }}
                                   >
-                                    ▶
+                                    <ChevronRight size={12} />
                                   </button>
                                 )}
                               </div>
@@ -2302,9 +2316,11 @@ ${taNotesRaw}`;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.25s ease' }}>
                       <div className="card" style={{ padding: '20px', borderLeft: '4px solid var(--primary)', background: 'var(--surface)' }}>
-                        <h4 style={{ fontSize: '15px', fontWeight: 'bold' }}>🎯 {selectedJob.title}</h4>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          🏢 {selectedJob.company} | 📍 {selectedJob.location} | 💰 {selectedJob.salary}
+                        <h4 style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><Target size={15} style={{ color: 'var(--primary)' }} /> {selectedJob.title}</h4>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Building size={13} /> {selectedJob.company}</span> | 
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={13} /> {selectedJob.location}</span> | 
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><DollarSign size={13} /> {selectedJob.salary}</span>
                         </div>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
                           {selectedJob.tags.map((tag, idx) => (
@@ -2418,10 +2434,11 @@ ${taNotesRaw}`;
                                 <button
                                   type="button"
                                   className="nav-tab"
-                                  style={{ margin: 0, padding: '8px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'var(--surface)', textAlign: 'center' }}
+                                  style={{ margin: 0, padding: '8px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                                   onClick={() => onOpenChat(candidate.name)}
                                 >
-                                  💬 {locale === 'vi' ? 'Trò chuyện' : 'Chat'}
+                                  <MessageSquare size={12} />
+                                  {locale === 'vi' ? 'Trò chuyện' : 'Chat'}
                                 </button>
                               </div>
                             </div>
@@ -2440,7 +2457,6 @@ ${taNotesRaw}`;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.05);
               }
               .kanban-card-hover:hover {
-                transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 border-color: var(--primary) !important;
               }
@@ -2468,14 +2484,14 @@ ${taNotesRaw}`;
             </div>
 
             {isCreateJobOpen && (
-              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--primary)' }}>
+              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>{locale === 'vi' ? 'Thêm Yêu Cầu Tuyển Dụng Mới' : 'Add New Job Request'}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Tiêu đề vị trí tuyển dụng *' : 'Job Title *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. Senior React Developer"
                       value={newJobTitle}
@@ -2486,7 +2502,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Khách hàng / Công ty *' : 'Client Company *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. VinGroup"
                       value={newJobCompany}
@@ -2497,7 +2513,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Địa điểm *' : 'Location *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. Hà Nội (Hybrid)"
                       value={newJobLocation}
@@ -2508,7 +2524,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Mức lương hiển thị *' : 'Salary Display *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. 30,000,000 - 45,000,000 VND"
                       value={newJobSalary}
@@ -2520,7 +2536,7 @@ ${taNotesRaw}`;
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Kỹ năng yêu cầu (cách nhau bởi dấu phẩy)' : 'Required Skills (comma-separated)'}</label>
                   <input
                     type="text"
-                    className="search-input"
+                    className="form-input"
                     style={{ width: '100%' }}
                     placeholder="React, TypeScript, CSS"
                     value={newJobTags}
@@ -2530,7 +2546,7 @@ ${taNotesRaw}`;
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Mô tả chi tiết yêu cầu tuyển dụng' : 'Detailed Job Description'}</label>
                   <textarea
-                    className="search-input"
+                    className="form-input"
                     style={{ width: '100%', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit', padding: '10px' }}
                     placeholder={locale === 'vi' ? 'Nhập mô tả dự án và các tiêu chí tuyển chọn...' : 'Enter project description and criteria...'}
                     value={newJobDesc}
@@ -2571,8 +2587,9 @@ ${taNotesRaw}`;
                   <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
                     {pt.clientLabel} {job.company}
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    📍 {job.location} | 💰 {job.salary}
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {job.location}</span> | 
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><DollarSign size={12} /> {job.salary}</span>
                   </div>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: '60px' }}>
                     {job.description}
@@ -2608,14 +2625,14 @@ ${taNotesRaw}`;
             </div>
 
             {isAddPartnerOpen && (
-              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--primary)' }}>
+              <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>{locale === 'vi' ? 'Đăng ký Đối tác / Freelancer mới' : 'Register New Partner / Freelancer'}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Mã đối tác (Viết tắt) *' : 'Partner Code *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. FSOFT, RIKKEI, HWL"
                       value={newPartnerCode}
@@ -2626,7 +2643,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Tên đối tác / Pháp nhân *' : 'Entity Name *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. FPT Software Co., Ltd"
                       value={newPartnerName}
@@ -2636,7 +2653,7 @@ ${taNotesRaw}`;
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Loại hình đối tác *' : 'Classification *'}</label>
                     <select
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%', background: 'var(--background)', color: 'var(--text)' }}
                       value={newPartnerType}
                       onChange={(e) => setNewPartnerType(e.target.value)}
@@ -2649,7 +2666,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Mã số thuế *' : 'Tax Code *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. 0101234567"
                       value={newPartnerTaxCode}
@@ -2660,7 +2677,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Người đại diện pháp lý *' : 'Legal Representative *'}</label>
                     <input
                       type="text"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="e.g. Nguyễn Văn A"
                       value={newPartnerRep}
@@ -2671,7 +2688,7 @@ ${taNotesRaw}`;
                     <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Số lượng Dev có thể cung cấp' : 'Initial Supplied Devs'}</label>
                     <input
                       type="number"
-                      className="search-input"
+                      className="form-input"
                       style={{ width: '100%' }}
                       placeholder="0"
                       value={newPartnerDevsCount}
@@ -2752,7 +2769,7 @@ ${taNotesRaw}`;
             </div>
 
             {/* Create Account Form */}
-            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--primary)' }}>
+            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border)' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 'bold' }}>
                 {locale === 'vi' ? 'Cấp tài khoản mới' : 'Provision New Account'}
               </h3>
@@ -2761,39 +2778,42 @@ ${taNotesRaw}`;
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Họ và tên *' : 'Full Name *'}</label>
                   <input
                     type="text"
-                    className="search-input"
+                    className="form-input"
                     style={{ width: '100%' }}
                     placeholder="e.g. Nguyễn Văn A"
                     value={newAccName}
                     onChange={(e) => setNewAccName(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Email đăng nhập *' : 'Login Email *'}</label>
                   <input
                     type="email"
-                    className="search-input"
+                    className="form-input"
                     style={{ width: '100%' }}
                     placeholder="e.g. name@vertex.vn"
                     value={newAccEmail}
                     onChange={(e) => setNewAccEmail(e.target.value)}
+                    autoComplete="off"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Mật khẩu khởi tạo *' : 'Initial Password *'}</label>
                   <input
                     type="password"
-                    className="search-input"
+                    className="form-input"
                     style={{ width: '100%' }}
                     placeholder="e.g. password"
                     value={newAccPassword}
                     onChange={(e) => setNewAccPassword(e.target.value)}
+                    autoComplete="new-password"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{locale === 'vi' ? 'Vai trò truy cập *' : 'System Role *'}</label>
                   <select
-                    className="search-input"
+                    className="form-input"
                     style={{ width: '100%', background: 'var(--background)', color: 'var(--text)' }}
                     value={newAccRole}
                     onChange={(e) => setNewAccRole(e.target.value)}
@@ -2854,8 +2874,9 @@ ${taNotesRaw}`;
 
             {/* Permission Matrix Table */}
             <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 'bold' }}>
-                🔑 {locale === 'vi' ? 'Ma trận Quyền hạn (Permission Matrix)' : 'System Permission Matrix'}
+              <h3 style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Key size={18} style={{ color: 'var(--primary)' }} />
+                {locale === 'vi' ? 'Ma trận Quyền hạn (Permission Matrix)' : 'System Permission Matrix'}
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-8px' }}>
                 {locale === 'vi' ? 'Cấu hình quyền hạn đọc/ghi/xóa dữ liệu hệ thống cho từng phân quyền.' : 'Manage granular system access permissions (View, Edit, Delete) per role.'}
@@ -2979,8 +3000,9 @@ ${taNotesRaw}`;
 
             {/* Danger Zone Safeguard UX */}
             <div className="card" style={{ padding: '20px', border: '1px dashed var(--danger)', background: 'var(--danger-bg)', borderRadius: 'var(--radius-md)' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--danger)' }}>
-                ⚠️ {locale === 'vi' ? 'Vùng Nguy Hiểm (Danger Zone)' : 'Danger Zone'}
+              <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} />
+                {locale === 'vi' ? 'Vùng Nguy Hiểm (Danger Zone)' : 'Danger Zone'}
               </h3>
               <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '4px', marginBottom: '16px' }}>
                 {locale === 'vi' 
@@ -3122,18 +3144,20 @@ ${taNotesRaw}`;
                   <button
                     type="button"
                     className={`nav-tab-modern ${modalActiveTab === 'cv' ? 'active' : ''}`}
-                    style={{ margin: 0, padding: '6px 14px', fontSize: '12.5px', background: modalActiveTab === 'cv' ? 'var(--surface-hover)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+                    style={{ margin: 0, padding: '6px 14px', fontSize: '12.5px', background: modalActiveTab === 'cv' ? 'var(--surface-hover)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     onClick={() => setModalActiveTab('cv')}
                   >
-                    📄 {locale === 'vi' ? 'Thông tin CV' : 'CV Profile'}
+                    <FileText size={13} />
+                    {locale === 'vi' ? 'Thông tin CV' : 'CV Profile'}
                   </button>
                   <button
                     type="button"
                     className={`nav-tab-modern ${modalActiveTab === 'assessment' ? 'active' : ''}`}
-                    style={{ margin: 0, padding: '6px 14px', fontSize: '12.5px', background: modalActiveTab === 'assessment' ? 'var(--surface-hover)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+                    style={{ margin: 0, padding: '6px 14px', fontSize: '12.5px', background: modalActiveTab === 'assessment' ? 'var(--surface-hover)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     onClick={() => setModalActiveTab('assessment')}
                   >
-                    ⭐ {locale === 'vi' ? 'Đánh giá nội bộ' : 'TA Assessment'}
+                    <Star size={13} />
+                    {locale === 'vi' ? 'Đánh giá nội bộ' : 'TA Assessment'}
                   </button>
                 </div>
               )}
@@ -3145,9 +3169,9 @@ ${taNotesRaw}`;
                   <div>
                     <h4 style={{ fontSize: '15px', fontWeight: 'bold' }}>{viewingCandidateCV.title}</h4>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <span>📧 {viewingCandidateCV.email}</span>
-                      <span>📞 {viewingCandidateCV.phone}</span>
-                      <span>📍 {viewingCandidateCV.location}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Mail size={13} /> {viewingCandidateCV.email}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Phone size={13} /> {viewingCandidateCV.phone}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={13} /> {viewingCandidateCV.location}</span>
                     </div>
                   </div>
 
@@ -3171,7 +3195,10 @@ ${taNotesRaw}`;
 
                   {viewingCandidateCV.internalNotes && (
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', background: 'rgba(255, 177, 0, 0.03)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255, 177, 0, 0.15)' }}>
-                      <h5 style={{ fontSize: '13px', color: '#ffb100', marginBottom: '4px', fontWeight: 'bold' }}>⚠️ {locale === 'vi' ? 'Ghi chú đánh giá nội bộ' : 'TA Internal Assessment notes'}</h5>
+                      <h5 style={{ fontSize: '13px', color: '#ffb100', marginBottom: '4px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertTriangle size={14} style={{ color: '#ffb100' }} />
+                        {locale === 'vi' ? 'Ghi chú đánh giá nội bộ' : 'TA Internal Assessment notes'}
+                      </h5>
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
                         {viewingCandidateCV.internalNotes}
                       </p>
@@ -3236,8 +3263,9 @@ ${taNotesRaw}`;
                   {/* 2. Technical Scorecard Subscores */}
                   <div className="card" style={{ padding: '16px', background: 'var(--surface-hover)', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '6px' }}>
-                      <h5 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', margin: 0 }}>
-                        ⭐ {locale === 'vi' ? 'Tiêu chí đánh giá chuyên môn' : 'Technical Evaluation Criteria'}
+                      <h5 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Star size={13} style={{ color: 'var(--primary)' }} />
+                        {locale === 'vi' ? 'Tiêu chí đánh giá chuyên môn' : 'Technical Evaluation Criteria'}
                       </h5>
                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffb100' }}>
                         Avg: ★ {((algoScore + archScore + commScore) / 3).toFixed(1)} / 5.0
@@ -3439,7 +3467,8 @@ ${taNotesRaw || (locale === 'vi' ? 'Đã phỏng vấn đạt yêu cầu chuyên
                       }}
                       disabled={isSavingTAInfo}
                     >
-                      🚀 {locale === 'vi' ? 'Phê duyệt nhanh (AVAILABLE)' : 'Approve Candidate (AVAILABLE)'}
+                      <Zap size={13} />
+                      {locale === 'vi' ? 'Phê duyệt nhanh (AVAILABLE)' : 'Approve Candidate (AVAILABLE)'}
                     </button>
 
                     {/* Standard Save */}
