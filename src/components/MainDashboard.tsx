@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, LogOut, Sun, Moon } from 'lucide-react';
+import { Sparkles, LogOut, Sun, Moon, User } from 'lucide-react';
 import OverviewTab from './landing/OverviewTab';
 import DeveloperTab from './landing/DeveloperTab';
 import EmployerTab from './landing/EmployerTab';
@@ -164,8 +164,9 @@ export default function MainDashboard({
           <div className="controls-container" style={{ gap: '12px' }}>
             {isLoggedIn && loggedInUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 700 }}>
-                  👤 {loggedInUser.name}
+                <span style={{ fontSize: '13.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <User size={14} />
+                  {loggedInUser.name}
                 </span>
                 <button
                   type="button"

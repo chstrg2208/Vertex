@@ -85,9 +85,7 @@ export default function LandingPage({ onOpenLogin, onSelectTab, jobsCount, talen
         overflow: 'hidden'
       }}>
         <div className="container" style={{ maxWidth: '900px' }}>
-          <span className="badge" style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)', color: '#f97316', marginBottom: '24px', padding: '6px 14px', fontSize: '13.5px', border: '1px solid rgba(249, 115, 22, 0.2)' }}>
-            {t.heroBadge}
-          </span>
+
           <h1 style={{
             fontSize: '52px',
             lineHeight: '1.15',
@@ -140,9 +138,7 @@ export default function LandingPage({ onOpenLogin, onSelectTab, jobsCount, talen
       <section style={{ padding: '80px 0', background: 'var(--surface)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <span className="badge" style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', marginBottom: '12px' }}>
-              {t.challengeBadge}
-            </span>
+
             <h2 style={{ fontSize: '32px' }}>{t.challengeTitle}</h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: '8px', maxWidth: '600px', margin: '8px auto 0 auto' }}>
               {t.challengeSubtitle}
@@ -171,9 +167,7 @@ export default function LandingPage({ onOpenLogin, onSelectTab, jobsCount, talen
       <section style={{ padding: '80px 0', background: 'var(--surface)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-            <span className="badge" style={{ backgroundColor: 'var(--secondary-light)', color: 'var(--secondary)', marginBottom: '12px' }}>
-              {t.modelBadge}
-            </span>
+
             <h2 style={{ fontSize: '32px' }}>{t.modelTitle}</h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
               {t.modelSubtitle}
@@ -225,9 +219,7 @@ export default function LandingPage({ onOpenLogin, onSelectTab, jobsCount, talen
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '48px', alignItems: 'center' }}>
             <div>
-              <span className="badge" style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', marginBottom: '16px' }}>
-                {t.vetBadge}
-              </span>
+
               <h2 style={{ fontSize: '32px', marginBottom: '20px', lineHeight: 1.3 }}>
                 {t.vetTitle}
               </h2>
@@ -271,9 +263,7 @@ export default function LandingPage({ onOpenLogin, onSelectTab, jobsCount, talen
       <section style={{ padding: '80px 0', background: 'var(--surface)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', marginBottom: '12px' }}>
-              {t.opsBadge}
-            </span>
+
             <h2 style={{ fontSize: '32px' }}>{t.opsTitle}</h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: '8px', maxWidth: '600px', margin: '8px auto 0 auto' }}>
               {t.opsSubtitle}
@@ -361,9 +351,7 @@ export default function LandingPage({ onOpenLogin, onSelectTab, jobsCount, talen
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '48px' }}>
             <div>
-              <span className="badge" style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)', color: '#f97316', marginBottom: '16px' }}>
-                {t.contactBadge}
-              </span>
+
               <h2 style={{ fontSize: '38px', marginBottom: '16px', fontWeight: 900, lineHeight: 1.2 }}>
                 {locale === 'vi' ? 'NHẬN BÁO GIÁ CHO ĐỘI NGŨ NHÂN SỰ CỦA BẠN!' : 'GET A QUOTE FOR YOUR DELEGATED SOFTWARE TEAM!'}
               </h2>

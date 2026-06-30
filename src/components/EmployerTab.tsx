@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Briefcase, User, MessageCircle, FileText, Check, X, ArrowRight, UserX } from 'lucide-react';
+import { Plus, Briefcase, User, MessageCircle, FileText, Check, X, ArrowRight, UserX, Mail, Phone, MapPin } from 'lucide-react';
 import { createJob, updateApplicationStatus } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 
@@ -379,10 +379,10 @@ export default function EmployerTab({ applications, jobs, onOpenChat }: Employer
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
                   <h4 style={{ fontSize: '15px' }}>{selectedCandidateForCV.title}</h4>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', gap: '12px' }}>
-                    <span>📧 {selectedCandidateForCV.email}</span>
-                    <span>📞 {selectedCandidateForCV.phone}</span>
-                    <span>📍 {selectedCandidateForCV.location}</span>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Mail size={13} /> {selectedCandidateForCV.email}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Phone size={13} /> {selectedCandidateForCV.phone}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={13} /> {selectedCandidateForCV.location}</span>
                   </div>
                 </div>
 

@@ -123,9 +123,7 @@ export default function EmployerTab({ locale, theme, onSelectTab }: EmployerTabP
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '48px', alignItems: 'center' }}>
             <div className="animate-fade-in-left">
-              <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', marginBottom: '16px' }}>
-                {locale === 'vi' ? 'TIÊU CHUẨN KHẢO SÁT' : 'SCREENING STANDARDS'}
-              </span>
+
               <h2 style={{ fontSize: '32px', marginBottom: '20px', lineHeight: 1.3 }}>
                 {t.empSection1Title}
               </h2>
@@ -190,9 +188,7 @@ export default function EmployerTab({ locale, theme, onSelectTab }: EmployerTabP
             </div>
 
             <div className="animate-fade-in-right">
-              <span className="badge" style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', marginBottom: '16px' }}>
-                {locale === 'vi' ? 'HỖ TRỢ VẬN HÀNH' : 'OPERATIONAL SUPPORT'}
-              </span>
+
               <h2 style={{ fontSize: '32px', marginBottom: '20px', lineHeight: 1.3 }}>
                 {t.empSection2Title}
               </h2>

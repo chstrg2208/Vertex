@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, FileText, CheckCircle, Code, Shield, Globe, Clock, Zap } from 'lucide-react';
+import { ArrowRight, FileText, CheckCircle, Code, Shield, Globe, Clock, Zap, MapPin, DollarSign } from 'lucide-react';
 import { translations, Locale } from '@/utils/translations';
 import HeroSection from './HeroSection';
 
@@ -113,9 +113,7 @@ export default function DeveloperTab({ initialJobs, locale, theme, onSelectTab }
       <section style={{ padding: '80px 0', background: 'var(--background)' }}>
         <div className="container">
           <div className="section-header-center" style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', marginBottom: '12px' }}>
-              {locale === 'vi' ? 'QUY TRÌNH THẨM ĐỊNH' : 'VETTING PROCESS'}
-            </span>
+
             <h2 className="section-title-large" style={{ fontSize: '32px', marginBottom: '16px' }}>
               {locale === 'vi' ? 'Quy Trình Tuyển Dụng Cho Lập Trình Viên' : 'Developer Hiring & Vetting Flow'}
             </h2>
@@ -146,7 +144,8 @@ export default function DeveloperTab({ initialJobs, locale, theme, onSelectTab }
                   flexDirection: 'column',
                   gap: '12px',
                   boxShadow: 'var(--shadow-sm)',
-                  position: 'relative'
+                  position: 'relative',
+                  overflow: 'visible'
                 }}
               >
                 <div style={{
@@ -216,9 +215,7 @@ export default function DeveloperTab({ initialJobs, locale, theme, onSelectTab }
 
             {/* Right side explanation */}
             <div className="animate-fade-in-right">
-              <span className="badge" style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', marginBottom: '16px' }}>
-                {locale === 'vi' ? 'QUYỀN LỢI LẬP TRÌNH VIÊN' : 'DEVELOPER BENEFITS'}
-              </span>
+
               <h2 style={{ fontSize: '32px', marginBottom: '20px', lineHeight: 1.3 }}>
                 {locale === 'vi' ? 'Môi Trường Làm Việc Remote Thực Chiến' : 'Professional Remote Work Environment'}
               </h2>
@@ -242,9 +239,7 @@ export default function DeveloperTab({ initialJobs, locale, theme, onSelectTab }
       <section style={{ padding: '80px 0', background: 'var(--background)' }}>
         <div className="container">
           <div className="section-header-center" style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <span className="badge" style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', marginBottom: '12px' }}>
-              {locale === 'vi' ? 'VIỆC LÀM REMOTE MỚI NHẤT' : 'LATEST REMOTE ROLES'}
-            </span>
+
             <h2 className="section-title-large" style={{ fontSize: '32px' }}>
               {locale === 'vi' ? 'Vị Trí Đang Tuyển Dụng Remote' : 'Open Remote Positions'}
             </h2>
@@ -282,8 +277,8 @@ export default function DeveloperTab({ initialJobs, locale, theme, onSelectTab }
                 </div>
 
                 <div className="job-details-meta" style={{ margin: '4px 0', display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  <div className="meta-item">📍 {locale === 'vi' ? 'Làm việc từ xa (Remote)' : 'Remote Location'}</div>
-                  <div className="meta-item">💰 {job.salary}</div>
+                  <div className="meta-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><MapPin size={13} /> {locale === 'vi' ? 'Làm việc từ xa (Remote)' : 'Remote Location'}</div>
+                  <div className="meta-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><DollarSign size={13} /> {job.salary}</div>
                 </div>
 
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: '60px' }}>
